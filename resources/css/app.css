@@ -27,6 +27,11 @@
     --abc-danger-bg: rgba(224, 122, 122, 0.14);
     --abc-font-display: 'Cormorant Garamond', Georgia, serif;
     --abc-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --color-accent: #D2B077;
+    --color-accent-hover: #C19E63;
+    --color-success: #22A85B;
+    --color-success-tint: #E7F7EE;
+    --color-success-tint-dark: rgba(34, 168, 91, 0.16);
 }
 
 @layer base {
@@ -229,6 +234,176 @@
     .abc-table tbody tr:hover {
         background-color: rgba(244, 238, 229, 0.025);
     }
+
+    .abc-btn-primary:active:not(:disabled),
+    .abc-btn-secondary:active:not(:disabled),
+    .abc-btn-success:active:not(:disabled),
+    .abc-pay-card:active {
+        transform: scale(0.98);
+    }
+
+    .abc-btn-success {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: var(--color-success);
+        color: #FFFFFF;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 0.625rem 1.125rem;
+        border-radius: 0.625rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color 150ms ease, transform 120ms ease;
+    }
+
+    .abc-btn-success:hover:not(:disabled) {
+        background-color: #1D934F;
+    }
+
+    .abc-pay-card {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        min-height: 72px;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(244, 238, 229, 0.12);
+        background-color: var(--abc-elevated);
+        color: var(--abc-text);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    @media (hover: hover) {
+        .abc-pay-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6);
+            border-color: rgba(210, 176, 119, 0.42);
+        }
+    }
+
+    .abc-pay-card[aria-checked="true"] {
+        border: 2px solid var(--color-accent);
+        background-color: rgba(210, 176, 119, 0.11);
+        padding: calc(1rem - 1px);
+    }
+
+    .abc-pay-card:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+    }
+
+    .abc-cta-tick {
+        animation: abcCtaTick 150ms ease-out;
+    }
+
+    @media (max-width: 767px) {
+        .abc-bottom-sheet {
+            position: fixed;
+            inset-inline: 0;
+            bottom: 0;
+            top: auto;
+            z-index: 50;
+            max-height: 88dvh;
+            overflow-y: auto;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            box-shadow: 0 -12px 40px rgba(16, 24, 40, 0.48);
+            animation: abcSheetUp 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+    }
+}
+
+@keyframes abcCtaTick {
+    0% {
+        opacity: 0.65;
+        transform: translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes abcSheetUp {
+    0% {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes abcReceiptUnroll {
+    0% {
+        clip-path: inset(0 0 84% 0);
+        transform: translateY(-6px);
+    }
+    82% {
+        clip-path: inset(0 0 0 0);
+        transform: translateY(2px);
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+        transform: translateY(0);
+    }
+}
+
+@keyframes abcReceiptLineReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.receipt-paper {
+    position: relative;
+    background-color: #FFFFFF;
+    color: #1A1D21;
+    width: 100%;
+    max-width: 310px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 1.5rem;
+    border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
+    box-shadow: 0 12px 40px rgba(16, 24, 40, 0.22);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.receipt-paper::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 6px;
+    background: radial-gradient(circle at 6px 0, #FFFFFF 5px, transparent 5.5px) repeat-x;
+    background-size: 12px 6px;
+}
+
+.receipt-paper.receipt-a4 {
+    max-width: 680px;
+    padding: 2rem;
+}
+
+.receipt-unroll {
+    animation: abcReceiptUnroll 1450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.receipt-line {
+    animation: abcReceiptLineReveal 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--line-index, 0) * 75ms + 160ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -237,23 +412,16 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
-}
 
-.receipt-paper {
-    background-color: #FFFFFF;
-    color: #141311;
-    width: 100%;
-    max-width: 80mm;
-    margin: 0 auto;
-    padding: 1.25rem 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.65);
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-}
-
-.receipt-paper.receipt-a4 {
-    max-width: 680px;
-    padding: 2rem;
+    .receipt-unroll,
+    .receipt-line,
+    .abc-cta-tick,
+    .abc-bottom-sheet {
+        animation: none !important;
+        clip-path: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
 
 @media print {
@@ -290,5 +458,17 @@
         margin: 0 auto !important;
         padding: 0 !important;
         max-width: 100% !important;
+    }
+
+    .receipt-paper::after {
+        display: none !important;
+    }
+
+    .receipt-unroll,
+    .receipt-line {
+        animation: none !important;
+        clip-path: none !important;
+        opacity: 1 !important;
+        transform: none !important;
     }
 }

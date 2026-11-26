@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let checkoutToken = root.dataset.checkoutToken;
     let activeCategory = 'all';
     let searchTerm = '';
+    let selectedPayOption = 'exact';
     let cart = [];
     let isSubmitting = false;
 
@@ -37,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const cartLinesEl = document.getElementById('pos-cart-lines');
     const cartEmptyEl = document.getElementById('pos-cart-empty');
+    const cartLoadingEl = document.getElementById('pos-cart-loading');
+    const browseMenuBtn = document.getElementById('pos-browse-menu-btn');
     const cartCountBadge = document.getElementById('pos-cart-count');
     const mobileCartCount = document.getElementById('pos-mobile-cart-count');
     const mobileCartTotal = document.getElementById('pos-mobile-cart-total');
@@ -47,12 +50,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerSelect = document.getElementById('pos-customer-id');
     const customerFilterInput = document.getElementById('pos-customer-search');
     const submitBtn = document.getElementById('pos-checkout-btn');
+    const checkoutLabel = document.getElementById('pos-checkout-label');
     const clearBtn = document.getElementById('pos-clear-cart-btn');
     const errorBox = document.getElementById('pos-error-box');
     const errorMsg = document.getElementById('pos-error-msg');
     const orderPanel = document.getElementById('pos-order-panel');
+    const sheetBackdrop = document.getElementById('pos-mobile-sheet-backdrop');
     const mobileCartToggle = document.getElementById('pos-mobile-cart-toggle');
     const mobileCartClose = document.getElementById('pos-mobile-cart-close');
+    const payCards = Array.from(document.querySelectorAll('[data-pay-option]'));
 
     const configDialog = document.getElementById('pos-config-dialog');
     const configTitle = document.getElementById('pos-config-title');
@@ -68,7 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const configCancelBtn = document.getElementById('pos-config-cancel');
 
     const receiptDialog = document.getElementById('pos-receipt-dialog');
-    const receiptSummary = document.getElementById('pos-receipt-summary');
+    const successOrderNum = document.getElementById('pos-success-order-num');
+    const successTotal = document.getElementById('pos-success-total');
+    const successCash = document.getElementById('pos-success-cash');
+    const successChange = document.getElementById('pos-success-change');
+    const successDetailLink = document.getElementById('pos-success-detail-link');
+    const liveReceiptWrap = document.getElementById('pos-live-receipt-wrap');
     const receiptPrintLink = document.getElementById('pos-receipt-print-link');
     const receiptNewOrderBtn = document.getElementById('pos-receipt-new-order');
 
@@ -83,6 +94,69 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearError() {
         errorBox?.classList.add('hidden');
     }
+
+    function tickCta() {
+        if (!checkoutLabel) return;
+        checkoutLabel.classList.remove('abc-cta-tick');
+        void checkoutLabel.offsetWidth;
+        checkoutLabel.classList.add('abc-cta-tick');
+    }
+
+    function setMobileSheet(open) {
+        if (!orderPanel) return;
+        orderPanel.classList.toggle('hidden', !open);
+        orderPanel.classList.toggle('abc-bottom-sheet', open);
+        sheetBackdrop?.classList.toggle('hidden', !open);
+    }
+
+    function applyPayOption(option, focusCustom = false) {
+        selectedPayOption = option;
+        payCards.forEach((card) => {
+            const active = card.dataset.payOption === option;
+            card.setAttribute('aria-checked', active ? 'true' : 'false');
+            card.setAttribute('tabindex', active ? '0' : '-1');
+            const badge = card.querySelector('[data-pay-check]');
+            if (badge) {
+                badge.classList.toggle('hidden', !active);
+                badge.classList.toggle('flex', active);
+            }
+        });
+
+        const { totalCentavos } = computeTotals();
+        if (cashInput) {
+            if (option === 'exact') {
+                cashInput.value = totalCentavos > 0 ? (totalCentavos / 100).toFixed(2) : '';
+            } else if (option === '200' || option === '500') {
+                cashInput.value = Number(option).toFixed(2);
+            } else if (option === 'custom' && focusCustom) {
+                cashInput.focus();
+                cashInput.select();
+            }
+        }
+
+        updatePaymentSummary(true);
+    }
+
+    payCards.forEach((card, index) => {
+        card.addEventListener('click', () => {
+            applyPayOption(card.dataset.payOption || 'exact', true);
+        });
+
+        card.addEventListener('keydown', (e) => {
+            let nextIndex = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                nextIndex = (index + 1) % payCards.length;
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                nextIndex = (index - 1 + payCards.length) % payCards.length;
+            }
+            if (nextIndex !== null) {
+                e.preventDefault();
+                const target = payCards[nextIndex];
+                target.focus();
+                applyPayOption(target.dataset.payOption || 'exact', false);
+            }
+        });
+    });
 
     function filterCatalog() {
         const q = searchTerm.trim().toLowerCase();
@@ -152,8 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return { totalCentavos, totalQty };
     }
 
-    function updatePaymentSummary() {
+    function updatePaymentSummary(animateTick = false) {
         const { totalCentavos, totalQty } = computeTotals();
+        if (selectedPayOption === 'exact' && cashInput) {
+            cashInput.value = totalCentavos > 0 ? (totalCentavos / 100).toFixed(2) : '';
+        }
+
         const cashCentavos = toCentavos(cashInput?.value);
         const changeCentavos = cashCentavos - totalCentavos;
 
@@ -166,14 +244,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (changeEl) {
             if (totalCentavos === 0) {
                 changeEl.textContent = '₱0.00';
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#BFB4A5]';
+                changeEl.className = 'tabular-nums font-semibold text-[#BFB4A5]';
             } else if (changeCentavos < 0) {
                 changeEl.textContent = `Short ${formatPhp(Math.abs(changeCentavos))}`;
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#E07A7A]';
+                changeEl.className = 'tabular-nums font-semibold text-[#E07A7A]';
             } else {
                 changeEl.textContent = formatPhp(changeCentavos);
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#9CAF94]';
+                changeEl.className = 'tabular-nums font-semibold text-[#22A85B]';
             }
+        }
+
+        if (checkoutLabel && !isSubmitting) {
+            checkoutLabel.textContent = `Complete Sale · ${formatPhp(totalCentavos)}`;
+            if (animateTick) tickCta();
         }
 
         if (submitBtn) {
@@ -194,37 +277,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const lineTotalCentavos = line.unit_centavos * line.quantity;
 
             const row = document.createElement('div');
-            row.className = 'abc-surface p-3 flex flex-col gap-2';
+            row.className = 'abc-surface p-3 flex items-start gap-3';
             row.dataset.cartLine = String(idx);
 
-            const header = document.createElement('div');
-            header.className = 'flex items-start justify-between gap-2';
+            const thumb = document.createElement('div');
+            thumb.className = 'w-12 h-12 rounded-lg bg-[#161412] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center';
+            if (line.image_url) {
+                const img = document.createElement('img');
+                img.src = line.image_url;
+                img.alt = line.name;
+                img.loading = 'lazy';
+                img.className = 'w-full h-full object-cover';
+                thumb.appendChild(img);
+            } else {
+                thumb.innerHTML = '<svg class="w-5 h-5 text-[#D2B077]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 8h1a3 3 0 010 6h-1M4 8h13v6a5 5 0 01-5 5H9a5 5 0 01-5-5V8z"/></svg>';
+            }
+
+            const body = document.createElement('div');
+            body.className = 'flex-1 min-w-0 space-y-2';
+
+            const topRow = document.createElement('div');
+            topRow.className = 'flex items-start justify-between gap-2';
 
             const info = document.createElement('div');
             info.className = 'min-w-0';
 
             const title = document.createElement('div');
-            title.className = 'font-medium text-sm text-[#F4EEE5] leading-snug';
+            title.className = 'font-medium text-[15px] text-[#F4EEE5] leading-snug';
             title.textContent = line.name;
             info.appendChild(title);
 
             if (line.variant_label) {
                 const vLabel = document.createElement('div');
-                vLabel.className = 'text-xs text-[#D2B077] mt-0.5';
-                vLabel.textContent = line.variant_label;
+                vLabel.className = 'text-xs text-[#BFB4A5] mt-0.5';
+                vLabel.textContent = `• ${line.variant_label}`;
                 info.appendChild(vLabel);
             }
 
-            if (line.addon_names.length > 0) {
+            line.addon_names.forEach((addonName) => {
                 const aLabel = document.createElement('div');
                 aLabel.className = 'text-xs text-[#BFB4A5] mt-0.5';
-                aLabel.textContent = '+ ' + line.addon_names.join(', ');
+                aLabel.textContent = `+ ${addonName}`;
                 info.appendChild(aLabel);
-            }
+            });
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'text-xs text-[#BFB4A5] hover:text-[#E07A7A] px-1.5 py-0.5 rounded';
+            removeBtn.className = 'text-xs text-[#BFB4A5] hover:text-[#E07A7A] px-1.5 py-0.5 rounded shrink-0';
             removeBtn.setAttribute('aria-label', `Remove ${line.name}`);
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
@@ -233,18 +332,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCart();
             });
 
-            header.appendChild(info);
-            header.appendChild(removeBtn);
+            topRow.appendChild(info);
+            topRow.appendChild(removeBtn);
 
-            const footer = document.createElement('div');
-            footer.className = 'flex items-center justify-between gap-2 pt-1';
+            const bottomRow = document.createElement('div');
+            bottomRow.className = 'flex items-center justify-between gap-2';
 
             const qtyGroup = document.createElement('div');
-            qtyGroup.className = 'inline-flex items-center gap-1.5 bg-[#161412] border border-white/10 rounded-md p-0.5';
+            qtyGroup.className = 'inline-flex items-center gap-1 bg-[#161412] border border-white/10 rounded-lg p-0.5';
 
             const decBtn = document.createElement('button');
             decBtn.type = 'button';
-            decBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F4EEE5] hover:bg-white/10';
+            decBtn.className = 'w-9 h-9 rounded-md text-sm font-semibold text-[#F4EEE5] hover:bg-white/10 active:text-[#D2B077]';
             decBtn.setAttribute('aria-label', `Decrease quantity of ${line.name}`);
             decBtn.textContent = '−';
             decBtn.addEventListener('click', () => {
@@ -258,12 +357,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const qtyText = document.createElement('span');
-            qtyText.className = 'w-7 text-center text-sm font-semibold tabular-nums';
+            qtyText.className = 'w-7 text-center text-sm font-semibold tabular-nums text-[#F4EEE5]';
             qtyText.textContent = String(line.quantity);
 
             const incBtn = document.createElement('button');
             incBtn.type = 'button';
-            incBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F4EEE5] hover:bg-white/10 disabled:opacity-40';
+            incBtn.className = 'w-9 h-9 rounded-md text-sm font-semibold text-[#D2B077] hover:bg-white/10 disabled:opacity-40';
             incBtn.setAttribute('aria-label', `Increase quantity of ${line.name}`);
             incBtn.textContent = '+';
             incBtn.addEventListener('click', () => {
@@ -292,15 +391,18 @@ document.addEventListener('DOMContentLoaded', () => {
             priceWrap.appendChild(linePrice);
             priceWrap.appendChild(unitNote);
 
-            footer.appendChild(qtyGroup);
-            footer.appendChild(priceWrap);
+            bottomRow.appendChild(qtyGroup);
+            bottomRow.appendChild(priceWrap);
 
-            row.appendChild(header);
-            row.appendChild(footer);
+            body.appendChild(topRow);
+            body.appendChild(bottomRow);
+
+            row.appendChild(thumb);
+            row.appendChild(body);
             cartLinesEl.appendChild(row);
         });
 
-        updatePaymentSummary();
+        updatePaymentSummary(true);
     }
 
     function addLineToCart(product, variant, selectedAddons, quantity) {
@@ -329,6 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cart.push({
                 product_id: product.id,
                 name: product.name,
+                image_url: product.image_url,
                 product_variant_id: variant ? variant.id : null,
                 variant_label: variant ? variant.display_label : null,
                 addon_ids: addonIds,
@@ -341,6 +444,110 @@ document.addEventListener('DOMContentLoaded', () => {
         clearError();
         renderCart();
         return true;
+    }
+
+    function buildLiveReceiptElement(ord) {
+        const paper = document.createElement('article');
+        paper.className = 'receipt-paper receipt-unroll text-xs leading-relaxed';
+
+        const header = document.createElement('div');
+        header.className = 'text-center border-b border-dashed border-neutral-300 pb-3 mb-3 space-y-1';
+        const logoImg = document.createElement('img');
+        logoImg.src = '/images/abc-logo.png';
+        logoImg.alt = 'Artisan Brew Co.';
+        logoImg.className = 'w-10 h-10 mx-auto object-contain border-0';
+        const brand = document.createElement('div');
+        brand.className = 'text-base font-bold tracking-wide uppercase text-[#1A1D21]';
+        brand.textContent = 'Artisan Brew Co.';
+        const sub = document.createElement('div');
+        sub.className = 'text-[11px] text-[#6B7280]';
+        sub.textContent = 'Specialty Coffee & Bakery Counter · Manila';
+        const num = document.createElement('div');
+        num.className = 'text-[11px] font-semibold tabular-nums pt-1 text-[#1A1D21]';
+        num.textContent = ord.order_number;
+        header.append(logoImg, brand, sub, num);
+
+        const meta = document.createElement('div');
+        meta.className = 'receipt-line space-y-1 border-b border-dashed border-neutral-300 pb-3 mb-3 text-[11px]';
+        meta.style.setProperty('--line-index', '0');
+        [
+            ['Date (Manila):', ord.created_at_manila],
+            ['Cashier:', ord.staff_name],
+            ['Customer:', ord.customer_name],
+        ].forEach(([label, val]) => {
+            const row = document.createElement('div');
+            row.className = 'flex justify-between gap-2';
+            const l = document.createElement('span');
+            l.className = 'text-[#6B7280]';
+            l.textContent = label;
+            const v = document.createElement('span');
+            v.className = 'font-medium text-right text-[#1A1D21]';
+            v.textContent = val;
+            row.append(l, v);
+            meta.appendChild(row);
+        });
+
+        const linesWrap = document.createElement('div');
+        linesWrap.className = 'border-b border-dashed border-neutral-300 pb-3 mb-3 space-y-2';
+        (ord.lines || []).forEach((line, idx) => {
+            const item = document.createElement('div');
+            item.className = 'receipt-line';
+            item.style.setProperty('--line-index', String(idx + 1));
+
+            const top = document.createElement('div');
+            top.className = 'flex justify-between gap-2 font-semibold text-[#1A1D21]';
+            const nameEl = document.createElement('span');
+            nameEl.textContent = `${line.quantity}× ${line.product_name}`;
+            const amtEl = document.createElement('span');
+            amtEl.className = 'tabular-nums shrink-0';
+            amtEl.textContent = line.total_price_formatted;
+            top.append(nameEl, amtEl);
+            item.appendChild(top);
+
+            if (line.variant_label) {
+                const vEl = document.createElement('div');
+                vEl.className = 'text-[11px] text-[#6B7280] pl-3';
+                vEl.textContent = line.variant_label;
+                item.appendChild(vEl);
+            }
+
+            (line.addons || []).forEach((addon) => {
+                const aEl = document.createElement('div');
+                aEl.className = 'text-[11px] text-[#6B7280] pl-3';
+                aEl.textContent = `+ ${addon}`;
+                item.appendChild(aEl);
+            });
+
+            linesWrap.appendChild(item);
+        });
+
+        const totalsIndex = (ord.lines || []).length + 1;
+        const totals = document.createElement('div');
+        totals.className = 'receipt-line space-y-1.5 text-xs border-b border-dashed border-neutral-300 pb-3 mb-3';
+        totals.style.setProperty('--line-index', String(totalsIndex));
+        [
+            ['TOTAL (PHP)', ord.total_formatted, 'flex justify-between text-sm font-bold text-[#1A1D21]'],
+            ['Cash Received', ord.cash_formatted, 'flex justify-between text-[11px] text-[#6B7280]'],
+            ['Change Due', ord.change_formatted, 'flex justify-between text-[11px] font-semibold text-[#1A1D21]'],
+        ].forEach(([l, v, cls]) => {
+            const row = document.createElement('div');
+            row.className = cls;
+            const lSpan = document.createElement('span');
+            lSpan.textContent = l;
+            const vSpan = document.createElement('span');
+            vSpan.className = 'tabular-nums';
+            vSpan.textContent = v;
+            row.append(lSpan, vSpan);
+            totals.appendChild(row);
+        });
+
+        const footer = document.createElement('div');
+        footer.className = 'receipt-line text-center text-[11px] text-[#6B7280]';
+        footer.style.setProperty('--line-index', String(totalsIndex + 1));
+        footer.textContent = 'Thank you for brewing with Artisan Brew Co.';
+
+        paper.append(header, meta, linesWrap, totals, footer);
+        return paper;
     }
 
     function updateConfiguratorPreview() {
@@ -479,6 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
         filterCatalog();
     });
 
+    browseMenuBtn?.addEventListener('click', () => {
+        setMobileSheet(false);
+        searchInput?.focus();
+    });
+
     categoryButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
             activeCategory = btn.dataset.posCategory || 'all';
@@ -506,25 +718,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearBtn?.addEventListener('click', () => {
         cart = [];
-        if (cashInput) cashInput.value = '';
+        applyPayOption('exact', false);
         clearError();
         renderCart();
     });
 
-    cashInput?.addEventListener('input', updatePaymentSummary);
-
-    document.querySelectorAll('[data-cash-quick]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            if (!cashInput) return;
-            const mode = btn.dataset.cashQuick;
-            if (mode === 'exact') {
-                const { totalCentavos } = computeTotals();
-                cashInput.value = (totalCentavos / 100).toFixed(2);
-            } else {
-                cashInput.value = Number(mode).toFixed(2);
-            }
-            updatePaymentSummary();
-        });
+    cashInput?.addEventListener('input', () => {
+        if (selectedPayOption !== 'custom') {
+            applyPayOption('custom', false);
+        } else {
+            updatePaymentSummary(false);
+        }
     });
 
     let customerSearchTimer = null;
@@ -553,22 +757,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 250);
     });
 
-    mobileCartToggle?.addEventListener('click', () => {
-        orderPanel?.classList.remove('hidden');
-        orderPanel?.classList.add('fixed', 'inset-0', 'z-50', 'overflow-y-auto', 'p-4', 'bg-[#111110]');
-    });
-    mobileCartClose?.addEventListener('click', () => {
-        orderPanel?.classList.add('hidden');
-        orderPanel?.classList.remove('fixed', 'inset-0', 'z-50', 'overflow-y-auto', 'p-4', 'bg-[#111110]');
-    });
+    mobileCartToggle?.addEventListener('click', () => setMobileSheet(true));
+    mobileCartClose?.addEventListener('click', () => setMobileSheet(false));
+    sheetBackdrop?.addEventListener('click', () => setMobileSheet(false));
 
     submitBtn?.addEventListener('click', async () => {
         if (isSubmitting || cart.length === 0) return;
 
         isSubmitting = true;
         clearError();
-        submitBtn.textContent = 'Completing sale...';
-        updatePaymentSummary();
+        cartLoadingEl?.classList.remove('hidden');
+        if (checkoutLabel) checkoutLabel.textContent = 'Completing sale...';
+        updatePaymentSummary(false);
 
         const payload = {
             checkout_token: checkoutToken,
@@ -619,45 +819,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             cart = [];
-            if (cashInput) cashInput.value = '';
             if (customerSelect) customerSelect.value = '';
+            applyPayOption('exact', false);
             renderCart();
+            setMobileSheet(false);
 
-            orderPanel?.classList.add('hidden');
-            orderPanel?.classList.remove('fixed', 'inset-0', 'z-50', 'overflow-y-auto', 'p-4', 'bg-[#111110]');
-
-            if (receiptDialog && receiptSummary && data.order) {
+            if (receiptDialog && data.order) {
                 const ord = data.order;
-                receiptSummary.innerHTML = '';
-
-                const meta = document.createElement('div');
-                meta.className = 'space-y-1 text-sm mb-3';
-                meta.innerHTML = `
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Receipt</span><span class="font-semibold text-[#D2B077] tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Customer</span><span></span></div>
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Cashier</span><span></span></div>
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Total</span><span class="font-semibold tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Cash</span><span class="tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Change</span><span class="font-semibold text-[#9CAF94] tabular-nums"></span></div>
-                `;
-                const spans = meta.querySelectorAll('span:last-child');
-                spans[0].textContent = ord.order_number;
-                spans[1].textContent = ord.customer_name;
-                spans[2].textContent = ord.staff_name;
-                spans[3].textContent = ord.total_formatted;
-                spans[4].textContent = ord.cash_formatted;
-                spans[5].textContent = ord.change_formatted;
-
-                receiptSummary.appendChild(meta);
+                if (successOrderNum) successOrderNum.textContent = `Receipt ${ord.order_number}`;
+                if (successTotal) successTotal.textContent = ord.total_formatted;
+                if (successCash) successCash.textContent = ord.cash_formatted;
+                if (successChange) successChange.textContent = ord.change_formatted;
+                if (successDetailLink) successDetailLink.href = ord.detail_url;
                 if (receiptPrintLink) receiptPrintLink.href = ord.receipt_url;
+                if (liveReceiptWrap) {
+                    liveReceiptWrap.innerHTML = '';
+                    liveReceiptWrap.appendChild(buildLiveReceiptElement(ord));
+                }
                 receiptDialog.showModal();
             }
         } catch {
             showError('Network error while submitting sale. Retry safely — your checkout token prevents duplicate charges.');
         } finally {
             isSubmitting = false;
-            submitBtn.textContent = 'Complete Sale';
-            updatePaymentSummary();
+            cartLoadingEl?.classList.add('hidden');
+            updatePaymentSummary(false);
         }
     });
 
