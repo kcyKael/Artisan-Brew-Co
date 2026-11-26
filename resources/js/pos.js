@@ -119,13 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (badge) {
                 if (newStock <= 0) {
                     badge.textContent = 'Sold out';
-                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(230,119,125,0.16)] text-[#E6777D]';
+                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(224,122,122,0.16)] text-[#E07A7A]';
                 } else if (product && newStock <= product.low_stock_threshold) {
-                    badge.textContent = `Low: ${newStock}`;
-                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(224,164,88,0.16)] text-[#E0A458] tabular-nums';
+                    badge.textContent = `Low stock (${newStock})`;
+                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(224,168,91,0.16)] text-[#E0A85B] tabular-nums';
                 } else {
-                    badge.textContent = `${newStock} left`;
-                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(88,185,135,0.14)] text-[#58B987] tabular-nums';
+                    badge.textContent = `Available (${newStock})`;
+                    badge.className = 'text-xs font-medium px-2 py-0.5 rounded bg-[rgba(156,175,148,0.16)] text-[#9CAF94] tabular-nums';
                 }
             }
             if (addBtn) {
@@ -166,13 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (changeEl) {
             if (totalCentavos === 0) {
                 changeEl.textContent = '₱0.00';
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#BDB5AA]';
+                changeEl.className = 'text-base font-semibold tabular-nums text-[#BFB4A5]';
             } else if (changeCentavos < 0) {
                 changeEl.textContent = `Short ${formatPhp(Math.abs(changeCentavos))}`;
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#E6777D]';
+                changeEl.className = 'text-base font-semibold tabular-nums text-[#E07A7A]';
             } else {
                 changeEl.textContent = formatPhp(changeCentavos);
-                changeEl.className = 'text-base font-semibold tabular-nums text-[#58B987]';
+                changeEl.className = 'text-base font-semibold tabular-nums text-[#9CAF94]';
             }
         }
 
@@ -204,27 +204,27 @@ document.addEventListener('DOMContentLoaded', () => {
             info.className = 'min-w-0';
 
             const title = document.createElement('div');
-            title.className = 'font-medium text-sm text-[#F5F0E8] leading-snug';
+            title.className = 'font-medium text-sm text-[#F4EEE5] leading-snug';
             title.textContent = line.name;
             info.appendChild(title);
 
             if (line.variant_label) {
                 const vLabel = document.createElement('div');
-                vLabel.className = 'text-xs text-[#C6A66B] mt-0.5';
+                vLabel.className = 'text-xs text-[#D2B077] mt-0.5';
                 vLabel.textContent = line.variant_label;
                 info.appendChild(vLabel);
             }
 
             if (line.addon_names.length > 0) {
                 const aLabel = document.createElement('div');
-                aLabel.className = 'text-xs text-[#BDB5AA] mt-0.5';
+                aLabel.className = 'text-xs text-[#BFB4A5] mt-0.5';
                 aLabel.textContent = '+ ' + line.addon_names.join(', ');
                 info.appendChild(aLabel);
             }
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'text-xs text-[#BDB5AA] hover:text-[#E6777D] px-1.5 py-0.5 rounded';
+            removeBtn.className = 'text-xs text-[#BFB4A5] hover:text-[#E07A7A] px-1.5 py-0.5 rounded';
             removeBtn.setAttribute('aria-label', `Remove ${line.name}`);
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
@@ -240,11 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
             footer.className = 'flex items-center justify-between gap-2 pt-1';
 
             const qtyGroup = document.createElement('div');
-            qtyGroup.className = 'inline-flex items-center gap-1.5 bg-[#141311] border border-white/10 rounded-md p-0.5';
+            qtyGroup.className = 'inline-flex items-center gap-1.5 bg-[#161412] border border-white/10 rounded-md p-0.5';
 
             const decBtn = document.createElement('button');
             decBtn.type = 'button';
-            decBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F5F0E8] hover:bg-white/10';
+            decBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F4EEE5] hover:bg-white/10';
             decBtn.setAttribute('aria-label', `Decrease quantity of ${line.name}`);
             decBtn.textContent = '−';
             decBtn.addEventListener('click', () => {
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const incBtn = document.createElement('button');
             incBtn.type = 'button';
-            incBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F5F0E8] hover:bg-white/10 disabled:opacity-40';
+            incBtn.className = 'w-7 h-7 rounded text-sm font-semibold text-[#F4EEE5] hover:bg-white/10 disabled:opacity-40';
             incBtn.setAttribute('aria-label', `Increase quantity of ${line.name}`);
             incBtn.textContent = '+';
             incBtn.addEventListener('click', () => {
@@ -284,10 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const priceWrap = document.createElement('div');
             priceWrap.className = 'text-right';
             const linePrice = document.createElement('div');
-            linePrice.className = 'text-sm font-semibold text-[#F5F0E8] tabular-nums';
+            linePrice.className = 'text-sm font-semibold text-[#F4EEE5] tabular-nums';
             linePrice.textContent = formatPhp(lineTotalCentavos);
             const unitNote = document.createElement('div');
-            unitNote.className = 'text-[11px] text-[#BDB5AA] tabular-nums';
+            unitNote.className = 'text-[11px] text-[#BFB4A5] tabular-nums';
             unitNote.textContent = `${formatPhp(line.unit_centavos)} ea`;
             priceWrap.appendChild(linePrice);
             priceWrap.appendChild(unitNote);
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             configVariantsWrap.classList.toggle('hidden', product.variants.length === 0);
             product.variants.forEach((v, index) => {
                 const label = document.createElement('label');
-                label.className = 'abc-surface p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:border-[#C6A66B]/50';
+                label.className = 'abc-surface p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:border-[#D2B077]/50';
 
                 const left = document.createElement('span');
                 left.className = 'flex items-center gap-2 text-sm';
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 radio.name = 'cfg_variant';
                 radio.value = String(v.id);
                 radio.checked = index === 0;
-                radio.className = 'accent-[#C6A66B]';
+                radio.className = 'accent-[#D2B077]';
                 radio.addEventListener('change', updateConfiguratorPreview);
 
                 const txt = document.createElement('span');
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 left.appendChild(txt);
 
                 const adj = document.createElement('span');
-                adj.className = 'text-xs font-medium text-[#C6A66B] tabular-nums';
+                adj.className = 'text-xs font-medium text-[#D2B077] tabular-nums';
                 adj.textContent = v.price_adjustment_centavos > 0 ? `+${formatPhp(v.price_adjustment_centavos)}` : 'Included';
 
                 label.appendChild(left);
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             configAddonsWrap.classList.toggle('hidden', product.addons.length === 0);
             product.addons.forEach((a) => {
                 const label = document.createElement('label');
-                label.className = 'abc-surface p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:border-[#C6A66B]/50';
+                label.className = 'abc-surface p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:border-[#D2B077]/50';
 
                 const left = document.createElement('span');
                 left.className = 'flex items-center gap-2 text-sm';
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.value = String(a.id);
-                cb.className = 'accent-[#C6A66B]';
+                cb.className = 'accent-[#D2B077]';
                 cb.addEventListener('change', updateConfiguratorPreview);
 
                 const txt = document.createElement('span');
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 left.appendChild(txt);
 
                 const price = document.createElement('span');
-                price.className = 'text-xs font-medium text-[#BDB5AA] tabular-nums';
+                price.className = 'text-xs font-medium text-[#BFB4A5] tabular-nums';
                 price.textContent = `+${formatPhp(a.price_centavos)}`;
 
                 label.appendChild(left);
@@ -485,11 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryButtons.forEach((other) => {
                 const active = other === btn;
                 other.setAttribute('aria-pressed', active ? 'true' : 'false');
-                other.classList.toggle('bg-[#C6A66B]', active);
+                other.classList.toggle('bg-[#D2B077]', active);
                 other.classList.toggle('text-[#111110]', active);
                 other.classList.toggle('font-semibold', active);
-                other.classList.toggle('bg-[#24211D]', !active);
-                other.classList.toggle('text-[#BDB5AA]', !active);
+                other.classList.toggle('bg-[#28241F]', !active);
+                other.classList.toggle('text-[#BFB4A5]', !active);
             });
             filterCatalog();
         });
@@ -549,7 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     customerSelect.appendChild(opt);
                 });
             } catch {
-
             }
         }, 250);
     });
@@ -634,12 +633,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const meta = document.createElement('div');
                 meta.className = 'space-y-1 text-sm mb-3';
                 meta.innerHTML = `
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Receipt</span><span class="font-semibold text-[#C6A66B] tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Customer</span><span></span></div>
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Cashier</span><span></span></div>
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Total</span><span class="font-semibold tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Cash</span><span class="tabular-nums"></span></div>
-                    <div class="flex justify-between"><span class="text-[#BDB5AA]">Change</span><span class="font-semibold text-[#58B987] tabular-nums"></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Receipt</span><span class="font-semibold text-[#D2B077] tabular-nums"></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Customer</span><span></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Cashier</span><span></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Total</span><span class="font-semibold tabular-nums"></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Cash</span><span class="tabular-nums"></span></div>
+                    <div class="flex justify-between"><span class="text-[#BFB4A5]">Change</span><span class="font-semibold text-[#9CAF94] tabular-nums"></span></div>
                 `;
                 const spans = meta.querySelectorAll('span:last-child');
                 spans[0].textContent = ord.order_number;

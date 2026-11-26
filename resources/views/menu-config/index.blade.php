@@ -6,25 +6,25 @@ use App\Support\Money;
     <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F5F0E8]">Menu Categories, Variants &amp; Add-ons</h1>
-                <p class="text-sm text-[#BDB5AA] mt-1">Configure drink sizes, hot/iced options, paid add-ons, and product eligibility.</p>
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5]">Menu Categories, Variants &amp; Add-ons</h1>
+                <p class="text-sm text-[#BFB4A5] mt-1">Configure drink sizes, hot/iced options, paid add-ons, and product eligibility.</p>
             </div>
             <a href="{{ route('products.index') }}" class="abc-btn-secondary self-start sm:self-auto">Manage Products</a>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="abc-panel p-5 space-y-4">
-                <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Categories</h2>
+                <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Categories</h2>
 
                 <form method="POST" action="{{ route('menu-config.categories.store') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                     @csrf
                     <div class="sm:col-span-2 space-y-1">
-                        <label for="cat-name" class="block text-xs font-medium text-[#BDB5AA]">New Category Name</label>
+                        <label for="cat-name" class="block text-xs font-medium text-[#BFB4A5]">New Category Name</label>
                         <input id="cat-name" name="name" type="text" required class="abc-input text-sm py-2" placeholder="e.g. Seasonal Specials">
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="text-xs text-[#BDB5AA] inline-flex items-center gap-1.5">
-                            <input type="checkbox" name="is_drink" value="1" checked class="accent-[#C6A66B]">
+                        <label class="text-xs text-[#BFB4A5] inline-flex items-center gap-1.5">
+                            <input type="checkbox" name="is_drink" value="1" checked class="accent-[#D2B077]">
                             <span>Drink</span>
                         </label>
                         <button type="submit" class="abc-btn-primary py-2 px-3 text-xs flex-1">Add</button>
@@ -39,11 +39,11 @@ use App\Support\Money;
                                 @method('PUT')
                                 <input type="text" name="name" value="{{ $category->name }}" aria-label="Category name" class="abc-input py-1.5 text-xs flex-1 min-w-[130px]">
                                 <input type="number" name="sort_order" value="{{ $category->sort_order }}" aria-label="Sort order" class="abc-input py-1.5 text-xs w-16 tabular-nums">
-                                <label class="text-xs text-[#BDB5AA] inline-flex items-center gap-1">
-                                    <input type="checkbox" name="is_drink" value="1" @checked($category->is_drink) class="accent-[#C6A66B]"> Drink
+                                <label class="text-xs text-[#BFB4A5] inline-flex items-center gap-1">
+                                    <input type="checkbox" name="is_drink" value="1" @checked($category->is_drink) class="accent-[#D2B077]"> Drink
                                 </label>
-                                <label class="text-xs text-[#BDB5AA] inline-flex items-center gap-1">
-                                    <input type="checkbox" name="is_active" value="1" @checked($category->is_active) class="accent-[#C6A66B]"> Active
+                                <label class="text-xs text-[#BFB4A5] inline-flex items-center gap-1">
+                                    <input type="checkbox" name="is_active" value="1" @checked($category->is_active) class="accent-[#D2B077]"> Active
                                 </label>
                                 <button type="submit" class="abc-btn-secondary py-1 px-2.5 text-xs">Save</button>
                             </form>
@@ -60,16 +60,16 @@ use App\Support\Money;
             </section>
 
             <section class="abc-panel p-5 space-y-4">
-                <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Paid Add-ons</h2>
+                <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Paid Add-ons</h2>
 
                 <form method="POST" action="{{ route('menu-config.addons.store') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
                     @csrf
                     <div class="sm:col-span-2 space-y-1">
-                        <label for="addon-name" class="block text-xs font-medium text-[#BDB5AA]">New Add-on</label>
+                        <label for="addon-name" class="block text-xs font-medium text-[#BFB4A5]">New Add-on</label>
                         <input id="addon-name" name="name" type="text" required class="abc-input text-sm py-2" placeholder="e.g. Hazelnut Syrup">
                     </div>
                     <div class="space-y-1">
-                        <label for="addon-price" class="block text-xs font-medium text-[#BDB5AA]">Price (PHP)</label>
+                        <label for="addon-price" class="block text-xs font-medium text-[#BFB4A5]">Price (PHP)</label>
                         <input id="addon-price" name="price" type="number" step="0.01" min="0" required class="abc-input text-sm py-2 tabular-nums" placeholder="25.00">
                     </div>
                     <button type="submit" class="abc-btn-primary py-2 text-xs">Add</button>
@@ -84,8 +84,8 @@ use App\Support\Money;
                                 <input type="text" name="name" value="{{ $addon->name }}" aria-label="Add-on name" class="abc-input py-1.5 text-xs flex-1 min-w-[120px]">
                                 <input type="number" step="0.01" min="0" name="price" value="{{ $addon->price }}" aria-label="Add-on price" class="abc-input py-1.5 text-xs w-24 tabular-nums">
                                 <input type="hidden" name="sort_order" value="{{ $addon->sort_order }}">
-                                <label class="text-xs text-[#BDB5AA] inline-flex items-center gap-1">
-                                    <input type="checkbox" name="is_active" value="1" @checked($addon->is_active) class="accent-[#C6A66B]"> Active
+                                <label class="text-xs text-[#BFB4A5] inline-flex items-center gap-1">
+                                    <input type="checkbox" name="is_active" value="1" @checked($addon->is_active) class="accent-[#D2B077]"> Active
                                 </label>
                                 <button type="submit" class="abc-btn-secondary py-1 px-2.5 text-xs">Save</button>
                             </form>
@@ -101,7 +101,7 @@ use App\Support\Money;
         </div>
 
         <section class="abc-panel p-5 space-y-4">
-            <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Per-Product Variant &amp; Add-on Eligibility</h2>
+            <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Per-Product Variant &amp; Add-on Eligibility</h2>
             <div class="overflow-x-auto">
                 <table class="abc-table">
                     <thead>
@@ -116,10 +116,10 @@ use App\Support\Money;
                         @foreach($products as $product)
                             <tr>
                                 <td>
-                                    <div class="font-medium text-[#F5F0E8]">{{ $product->name }}</div>
-                                    <div class="text-xs text-[#BDB5AA]">{{ $product->category?->name ?? 'Menu' }} · Base {{ Money::formatPhp($product->price) }}</div>
+                                    <div class="font-medium text-[#F4EEE5]">{{ $product->name }}</div>
+                                    <div class="text-xs text-[#BFB4A5]">{{ $product->category?->name ?? 'Menu' }} · Base {{ Money::formatPhp($product->price) }}</div>
                                 </td>
-                                <td class="text-xs text-[#BDB5AA]">
+                                <td class="text-xs text-[#BFB4A5]">
                                     @if($product->variants->isEmpty())
                                         <span>Single item (no drink variants)</span>
                                     @else
@@ -131,8 +131,8 @@ use App\Support\Money;
                                         @csrf
                                         @method('PUT')
                                         @foreach($addons as $addon)
-                                            <label class="text-xs inline-flex items-center gap-1 text-[#BDB5AA]">
-                                                <input type="checkbox" name="addon_ids[]" value="{{ $addon->id }}" @checked($product->addons->contains('id', $addon->id)) class="accent-[#C6A66B]">
+                                            <label class="text-xs inline-flex items-center gap-1 text-[#BFB4A5]">
+                                                <input type="checkbox" name="addon_ids[]" value="{{ $addon->id }}" @checked($product->addons->contains('id', $addon->id)) class="accent-[#D2B077]">
                                                 <span>{{ $addon->name }}</span>
                                             </label>
                                         @endforeach

@@ -11,8 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardMetricsService
 {
-    public function build(string $fromDate, string $toDate): array
-    {
+    public function build(
+        string $fromDate,
+        string $toDate,
+        string $preset = '14d',
+        string $label = 'Last 14 Days'
+    ): array {
         $tz = BusinessTime::timezone();
         [$todayStartUtc, $todayEndUtc] = BusinessTime::utcBoundsForToday();
         [$rangeStartUtc, $rangeEndUtc] = BusinessTime::utcBoundsForManilaRange($fromDate, $toDate);
@@ -37,6 +41,7 @@ class DashboardMetricsService
 
         $rangeRevenueCentavos = Money::toCentavos((string) ($rangeOrderAgg->revenue ?? '0.00'));
         $rangeOrderCount = (int) ($rangeOrderAgg->order_count ?? 0);
+        $rangeAvgCentavos = $rangeOrderCount > 0 ? intdiv($rangeRevenueCentavos, $rangeOrderCount) : 0;
 
         $rangeUnits = (int) DB::table('sales')
             ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
@@ -80,31 +85,56 @@ class DashboardMetricsService
             ];
         }, $dailyBuckets));
 
-        $topProducts = DB::table('sales')
+        $rawTop = DB::table('sales')
             ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
             ->groupBy('product_id', 'product_name_snapshot')
             ->selectRaw('product_id, product_name_snapshot as name, SUM(quantity) as units_sold, SUM(total_price) as revenue')
             ->orderByDesc('units_sold')
             ->orderByDesc('revenue')
             ->limit(6)
-            ->get()
-            ->map(static fn ($row) => [
+            ->get();
+
+        $maxUnits = max(1, (int) ($rawTop->max('units_sold') ?? 1));
+
+        $topProducts = $rawTop->map(static function ($row) use ($maxUnits): array {
+            $units = (int) $row->units_sold;
+
+            return [
                 'product_id' => (int) $row->product_id,
                 'name' => (string) $row->name,
-                'units_sold' => (int) $row->units_sold,
+                'units_sold' => $units,
+                'share_percent' => (int) max(8, round(($units / $maxUnits) * 100)),
                 'revenue' => round(Money::toCentavos((string) $row->revenue) / 100, 2),
                 'revenue_formatted' => Money::formatPhp((string) $row->revenue),
-            ])
-            ->values()
-            ->all();
+            ];
+        })->values()->all();
 
         $recentOrders = Order::query()
+            ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
             ->withCount('sales')
-            ->with(['customer', 'staff'])
+            ->with(['sales', 'customer', 'staff'])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit(8)
             ->get();
+
+        $inventoryCounts = DB::table('products')
+            ->whereNull('archived_at')
+            ->where('is_active', true)
+            ->selectRaw('
+                COUNT(*) as active_menu_count,
+                COALESCE(SUM(CASE WHEN stock_quantity <= 0 THEN 1 ELSE 0 END), 0) as sold_out_count,
+                COALESCE(SUM(CASE WHEN stock_quantity > 0 AND stock_quantity <= low_stock_threshold THEN 1 ELSE 0 END), 0) as low_stock_count,
+                COALESCE(SUM(CASE WHEN stock_quantity > low_stock_threshold THEN 1 ELSE 0 END), 0) as available_count
+            ')
+            ->first();
+
+        $activeMenuCount = (int) ($inventoryCounts->active_menu_count ?? 0);
+        $soldOutCount = (int) ($inventoryCounts->sold_out_count ?? 0);
+        $lowStockCount = (int) ($inventoryCounts->low_stock_count ?? 0);
+        $availableCount = (int) ($inventoryCounts->available_count ?? 0);
+        $alertCount = $soldOutCount + $lowStockCount;
+        $invDenom = max(1, $activeMenuCount);
 
         $lowStockProducts = Product::query()
             ->with('category')
@@ -118,6 +148,8 @@ class DashboardMetricsService
 
         return [
             'range' => [
+                'preset' => $preset,
+                'label' => $label,
                 'from' => $fromDate,
                 'to' => $toDate,
                 'timezone' => $tz,
@@ -130,9 +162,21 @@ class DashboardMetricsService
                 'average_order_formatted' => Money::formatCentavos($todayAvgCentavos),
             ],
             'selected_range' => [
+                'revenue_centavos' => $rangeRevenueCentavos,
                 'revenue_formatted' => Money::formatCentavos($rangeRevenueCentavos),
                 'orders_count' => $rangeOrderCount,
                 'units_sold' => $rangeUnits,
+                'average_order_formatted' => Money::formatCentavos($rangeAvgCentavos),
+            ],
+            'inventory_status' => [
+                'active_menu_count' => $activeMenuCount,
+                'sold_out_count' => $soldOutCount,
+                'low_stock_count' => $lowStockCount,
+                'available_count' => $availableCount,
+                'alert_count' => $alertCount,
+                'sold_out_pct' => (int) round(($soldOutCount / $invDenom) * 100),
+                'low_stock_pct' => (int) round(($lowStockCount / $invDenom) * 100),
+                'available_pct' => (int) round(($availableCount / $invDenom) * 100),
             ],
             'revenue_series' => $revenueSeries,
             'top_products' => $topProducts,

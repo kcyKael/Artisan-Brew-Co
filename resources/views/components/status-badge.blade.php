@@ -2,11 +2,11 @@
 
 @php
 $classes = match ($tone) {
-        'success' => 'bg-[rgba(88,185,135,0.14)] text-[#58B987] border-[#58B987]/30',
-        'warning' => 'bg-[rgba(224,164,88,0.14)] text-[#E0A458] border-[#E0A458]/30',
-        'danger' => 'bg-[rgba(230,119,125,0.14)] text-[#E6777D] border-[#E6777D]/30',
-        'accent' => 'bg-[rgba(198,166,107,0.14)] text-[#C6A66B] border-[#C6A66B]/30',
-        default => 'bg-white/[0.06] text-[#BDB5AA] border-white/10',
+        'success' => 'bg-[rgba(156,175,148,0.14)] text-[#9CAF94] border-[#9CAF94]/35',
+        'warning' => 'bg-[rgba(224,168,91,0.14)] text-[#E0A85B] border-[#E0A85B]/35',
+        'danger' => 'bg-[rgba(224,122,122,0.14)] text-[#E07A7A] border-[#E07A7A]/35',
+        'accent' => 'bg-[rgba(210,176,119,0.14)] text-[#D2B077] border-[#D2B077]/35',
+        default => 'bg-white/[0.06] text-[#BFB4A5] border-white/10',
     };
 @endphp
 

@@ -7,8 +7,8 @@ use App\Support\BusinessTime;
     <div class="max-w-4xl mx-auto space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F5F0E8] tabular-nums">Order {{ $order->order_number }}</h1>
-                <p class="text-sm text-[#BDB5AA] mt-1">
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5] tabular-nums">Order {{ $order->order_number }}</h1>
+                <p class="text-sm text-[#BFB4A5] mt-1">
                     Completed {{ BusinessTime::format($order->created_at) }} (Asia/Manila) · Channel: {{ $order->source === 'record_sale' ? 'Record Sale' : 'POS Terminal' }}
                 </p>
             </div>
@@ -20,25 +20,25 @@ use App\Support\BusinessTime;
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="abc-panel p-4 space-y-1">
-                <div class="text-xs uppercase tracking-wider text-[#BDB5AA]">Customer</div>
-                <div class="text-base font-semibold text-[#F5F0E8]">{{ $order->customer_name_snapshot }}</div>
+                <div class="text-xs uppercase tracking-wider text-[#BFB4A5]">Customer</div>
+                <div class="text-base font-semibold text-[#F4EEE5]">{{ $order->customer_name_snapshot }}</div>
                 @if($order->customer)
-                    <div class="text-xs text-[#BDB5AA]">{{ $order->customer->displayIdentifier() }}</div>
+                    <div class="text-xs text-[#BFB4A5]">{{ $order->customer->displayIdentifier() }}</div>
                 @endif
             </div>
 
             <div class="abc-panel p-4 space-y-1">
-                <div class="text-xs uppercase tracking-wider text-[#BDB5AA]">Processed By</div>
-                <div class="text-base font-semibold text-[#F5F0E8]">{{ $order->staff_name_snapshot }}</div>
+                <div class="text-xs uppercase tracking-wider text-[#BFB4A5]">Processed By</div>
+                <div class="text-base font-semibold text-[#F4EEE5]">{{ $order->staff_name_snapshot }}</div>
                 @if($order->staff)
-                    <div class="text-xs text-[#BDB5AA]">{{ ucfirst($order->staff->role) }} · {{ $order->staff->username }}</div>
+                    <div class="text-xs text-[#BFB4A5]">{{ ucfirst($order->staff->role) }} · {{ $order->staff->username }}</div>
                 @endif
             </div>
 
             <div class="abc-panel p-4 space-y-1">
-                <div class="text-xs uppercase tracking-wider text-[#BDB5AA]">Cash Payment</div>
-                <div class="text-xl font-semibold text-[#C6A66B] tabular-nums">{{ Money::formatPhp($order->total_amount) }}</div>
-                <div class="text-xs text-[#BDB5AA] tabular-nums">
+                <div class="text-xs uppercase tracking-wider text-[#BFB4A5]">Cash Payment</div>
+                <div class="text-xl font-semibold text-[#D2B077] tabular-nums">{{ Money::formatPhp($order->total_amount) }}</div>
+                <div class="text-xs text-[#BFB4A5] tabular-nums">
                     Cash: {{ Money::formatPhp($order->cash_received) }} · Change: {{ Money::formatPhp($order->change_amount) }}
                 </div>
             </div>
@@ -46,7 +46,7 @@ use App\Support\BusinessTime;
 
         <div class="abc-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-white/10">
-                <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Line Items (Historical Snapshot)</h2>
+                <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Line Items (Historical Snapshot)</h2>
             </div>
             <div class="overflow-x-auto">
                 <table class="abc-table">
@@ -62,12 +62,12 @@ use App\Support\BusinessTime;
                         @foreach($order->sales as $sale)
                             <tr>
                                 <td>
-                                    <div class="font-medium text-[#F5F0E8]">{{ $sale->product_name_snapshot }}</div>
+                                    <div class="font-medium text-[#F4EEE5]">{{ $sale->product_name_snapshot }}</div>
                                     @if($sale->variant_label_snapshot)
-                                        <div class="text-xs text-[#C6A66B]">{{ $sale->variant_label_snapshot }}</div>
+                                        <div class="text-xs text-[#D2B077]">{{ $sale->variant_label_snapshot }}</div>
                                     @endif
                                     @if($sale->saleAddons->isNotEmpty())
-                                        <div class="text-xs text-[#BDB5AA]">
+                                        <div class="text-xs text-[#BFB4A5]">
                                             Add-ons:
                                             @foreach($sale->saleAddons as $addon)
                                                 {{ $addon->addon_name_snapshot }} ({{ Money::formatPhp($addon->addon_price_snapshot) }})@unless($loop->last), @endunless

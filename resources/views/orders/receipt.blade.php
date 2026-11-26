@@ -7,8 +7,8 @@ use App\Support\BusinessTime;
     <div class="max-w-3xl mx-auto space-y-6">
         <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl font-semibold text-[#F5F0E8]">Printable Receipt</h1>
-                <p class="text-sm text-[#BDB5AA]">Switch between 80mm thermal and A4 layout, then print without duplicating the sale.</p>
+                <h1 class="font-display text-3xl font-semibold text-[#F4EEE5]">Printable Receipt</h1>
+                <p class="text-sm text-[#BFB4A5]">Switch between 80mm thermal and A4 layout, then print without duplicating the sale.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" data-receipt-layout="80mm" aria-pressed="true" class="abc-btn-primary py-2 px-3 text-xs">80mm Thermal</button>

@@ -248,30 +248,30 @@
     "src": "node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-vietnamese-700-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-C8rg1JkK.css",
+    "file": "assets/app-PIadePWJ.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-dN8dYYcy.js",
+    "file": "assets/app-BSS3GmLX.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
   },
   "resources/js/dashboard.js": {
-    "file": "assets/dashboard-psrXqar1.js",
+    "file": "assets/dashboard-DL8tcOTg.js",
     "name": "dashboard",
     "src": "resources/js/dashboard.js",
     "isEntry": true
   },
   "resources/js/pos.js": {
-    "file": "assets/pos-47E9-Riy.js",
+    "file": "assets/pos-CUB_oH39.js",
     "name": "pos",
     "src": "resources/js/pos.js",
     "isEntry": true
   },
   "resources/js/record-sale.js": {
-    "file": "assets/record-sale-BDwvPYdl.js",
+    "file": "assets/record-sale-C8sNwZwm.js",
     "name": "record-sale",
     "src": "resources/js/record-sale.js",
     "isEntry": true

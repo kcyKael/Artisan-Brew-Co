@@ -1,195 +1,269 @@
 @php
 use App\Support\BusinessTime;
     use App\Support\Money;
+
+    $inv = $metrics['inventory_status'];
+    $recentSerialized = $metrics['recent_orders']->map(function ($order) {
+        $firstItem = $order->sales->first()?->product_name_snapshot ?? 'Order items';
+        $extra = max(0, $order->sales->count() - 1);
+        return [
+            'order_number' => $order->order_number,
+            'items_summary' => $extra > 0 ? "{$firstItem} +{$extra} more" : $firstItem,
+            'customer_name' => $order->customer_name_snapshot,
+            'staff_name' => $order->staff_name_snapshot,
+            'total_formatted' => Money::formatPhp($order->total_amount),
+            'created_at_manila' => BusinessTime::format($order->created_at),
+            'show_url' => route('orders.show', $order),
+            'receipt_url' => route('orders.receipt', $order),
+        ];
+    })->values()->all();
 @endphp
 
-<x-layouts.app title="Executive Dashboard">
+<x-layouts.app title="Sales Overview">
     <div id="dashboard-app"
          data-metrics-url="{{ route('dashboard.metrics') }}"
          data-initial="{{ json_encode([
+            'range' => $metrics['range'],
             'selected_range' => $metrics['selected_range'],
+            'inventory_status' => $inv,
             'revenue_series' => $metrics['revenue_series'],
             'top_products' => $metrics['top_products'],
+            'recent_orders' => $recentSerialized,
          ]) }}"
          class="space-y-6">
 
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F5F0E8]">Cafe Operations Overview</h1>
-                <p class="text-sm text-[#BDB5AA] mt-1">
-                    Live database revenue, completed orders, and inventory status in {{ $metrics['range']['timezone'] }} time.
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5]">Sales Overview</h1>
+                <p class="text-sm text-[#BFB4A5] mt-0.5">
+                    Today ({{ $metrics['range']['timezone'] }}):
+                    <span class="text-[#F4EEE5] font-medium tabular-nums">{{ $metrics['today']['revenue_formatted'] }}</span>
+                    across <span class="text-[#F4EEE5] font-medium tabular-nums">{{ $metrics['today']['orders_count'] }}</span> order(s)
                 </p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('pos.index') }}" class="abc-btn-primary">Open POS Terminal</a>
-                <a href="{{ route('sales.record') }}" class="abc-btn-secondary">Record Sale</a>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+                <label for="dash-preset-select" class="sr-only">Filter date range</label>
+                <select id="dash-preset-select" class="abc-input w-44 py-2 text-sm">
+                    <option value="all" @selected($preset === 'all')>All Time</option>
+                    <option value="30d" @selected($preset === '30d')>Last 30 Days</option>
+                    <option value="14d" @selected($preset === '14d')>Last 14 Days</option>
+                    <option value="7d" @selected($preset === '7d')>Last 7 Days</option>
+                    <option value="today" @selected($preset === 'today')>Today</option>
+                </select>
             </div>
         </div>
 
-        <section aria-label="Today's key metrics" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="abc-panel p-5 space-y-1">
-                <div class="text-xs font-medium uppercase tracking-wider text-[#BDB5AA]">Today's Revenue</div>
-                <div class="text-2xl font-semibold text-[#C6A66B] tabular-nums">{{ $metrics['today']['revenue_formatted'] }}</div>
-                <div class="text-xs text-[#BDB5AA]">Completed orders today (Manila)</div>
+        <section aria-label="Primary operational metrics" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="abc-panel p-5 flex flex-col justify-between gap-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-[#BFB4A5]">Revenue (<span id="dash-period-label">{{ $metrics['range']['label'] }}</span>)</div>
+                        <div id="dash-range-revenue" class="text-3xl font-semibold text-[#F4EEE5] tabular-nums">
+                            {{ $metrics['selected_range']['revenue_formatted'] }}
+                        </div>
+                    </div>
+                    <span class="w-9 h-9 rounded-lg bg-[#28241F] border border-[#D2B077]/30 flex items-center justify-center text-[#D2B077]" aria-hidden="true">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 17l6-6 4 4 6-8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#BFB4A5] pt-2 border-t border-white/10">
+                    <span>Orders: <strong id="dash-range-orders" class="text-[#F4EEE5] tabular-nums">{{ $metrics['selected_range']['orders_count'] }}</strong></span>
+                    <span>Units sold: <strong id="dash-range-units" class="text-[#F4EEE5] tabular-nums">{{ $metrics['selected_range']['units_sold'] }}</strong></span>
+                    <span>Avg order: <strong id="dash-range-avg" class="text-[#D2B077] tabular-nums">{{ $metrics['selected_range']['average_order_formatted'] }}</strong></span>
+                </div>
             </div>
-            <div class="abc-panel p-5 space-y-1">
-                <div class="text-xs font-medium uppercase tracking-wider text-[#BDB5AA]">Today's Orders</div>
-                <div class="text-2xl font-semibold text-[#F5F0E8] tabular-nums">{{ $metrics['today']['orders_count'] }}</div>
-                <div class="text-xs text-[#BDB5AA]">Distinct completed receipts</div>
+
+            <div class="abc-panel p-5 flex flex-col justify-between gap-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-[#BFB4A5]">Low Stock Items</div>
+                        <div class="text-3xl font-semibold text-[#F4EEE5] tabular-nums">
+                            {{ $inv['alert_count'] }} {{ Str::plural('product', $inv['alert_count']) }}
+                        </div>
+                    </div>
+                    <x-status-badge :tone="$inv['alert_count'] > 0 ? 'warning' : 'success'">
+                        Alerts: {{ $inv['alert_count'] }}
+                    </x-status-badge>
+                </div>
+                <div class="space-y-2 pt-2 border-t border-white/10">
+                    <div class="flex justify-between text-xs text-[#BFB4A5] tabular-nums">
+                        <span>Sold out: <strong class="text-[#E07A7A]">{{ $inv['sold_out_count'] }}</strong></span>
+                        <span>Low stock: <strong class="text-[#E0A85B]">{{ $inv['low_stock_count'] }}</strong></span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-[#28241F] overflow-hidden flex">
+                        <div class="bg-[#E07A7A]" style="width: {{ $inv['sold_out_pct'] }}%"></div>
+                        <div class="bg-[#E0A85B]" style="width: {{ $inv['low_stock_pct'] }}%"></div>
+                    </div>
+                </div>
             </div>
-            <div class="abc-panel p-5 space-y-1">
-                <div class="text-xs font-medium uppercase tracking-wider text-[#BDB5AA]">Units Sold Today</div>
-                <div class="text-2xl font-semibold text-[#F5F0E8] tabular-nums">{{ $metrics['today']['units_sold'] }}</div>
-                <div class="text-xs text-[#BDB5AA]">Drinks &amp; pastries served</div>
-            </div>
-            <div class="abc-panel p-5 space-y-1">
-                <div class="text-xs font-medium uppercase tracking-wider text-[#BDB5AA]">Average Order Value</div>
-                <div class="text-2xl font-semibold text-[#F5F0E8] tabular-nums">{{ $metrics['today']['average_order_formatted'] }}</div>
-                <div class="text-xs text-[#BDB5AA]">Per receipt today</div>
+
+            <div class="abc-panel p-5 flex flex-col justify-between gap-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-[#BFB4A5]">Active Menu Items</div>
+                        <div class="text-3xl font-semibold text-[#F4EEE5] tabular-nums">
+                            {{ $inv['active_menu_count'] }} {{ Str::plural('item', $inv['active_menu_count']) }}
+                        </div>
+                    </div>
+                    <span class="w-9 h-9 rounded-lg bg-[#9CAF94]/18 border border-[#9CAF94]/35 flex items-center justify-center text-[#9CAF94]" aria-hidden="true">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 8h1a3 3 0 010 6h-1M4 8h13v6a5 5 0 01-5 5H9a5 5 0 01-5-5V8z"/><path d="M8 3v2M12 3v2" stroke-linecap="round"/></svg>
+                    </span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-[#BFB4A5] pt-2 border-t border-white/10">
+                    <span>Available: <strong class="text-[#9CAF94] tabular-nums">{{ $inv['available_count'] }}</strong></span>
+                    <a href="{{ route('products.index') }}" class="text-[#D2B077] hover:underline font-medium">Manage menu</a>
+                </div>
             </div>
         </section>
 
-        <section class="abc-panel p-5 space-y-5">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                    <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Revenue &amp; Menu Performance</h2>
-                    <div class="flex flex-wrap items-center gap-4 mt-1 text-sm text-[#BDB5AA]">
-                        <span>Range Revenue: <strong id="dash-range-revenue" class="text-[#C6A66B] tabular-nums">{{ $metrics['selected_range']['revenue_formatted'] }}</strong></span>
-                        <span>Orders: <strong id="dash-range-orders" class="text-[#F5F0E8] tabular-nums">{{ $metrics['selected_range']['orders_count'] }}</strong></span>
-                        <span>Units: <strong id="dash-range-units" class="text-[#F5F0E8] tabular-nums">{{ $metrics['selected_range']['units_sold'] }}</strong></span>
+        <div id="dash-chart-status" class="hidden text-xs text-[#BFB4A5]" role="status"></div>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div class="lg:col-span-8 abc-panel p-5 flex flex-col justify-between gap-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.14em] text-[#BFB4A5]">Daily Revenue</div>
+                        <h2 id="dash-chart-heading" class="font-display text-2xl font-semibold text-[#F4EEE5] mt-0.5">{{ $metrics['range']['label'] }}</h2>
+                        <div class="text-xs text-[#BFB4A5] mt-0.5">
+                            Total Revenue: <strong id="dash-chart-total" class="text-[#D2B077] tabular-nums">{{ $metrics['selected_range']['revenue_formatted'] }}</strong>
+                        </div>
+                    </div>
+                    <a href="{{ route('sales.index') }}" class="abc-btn-secondary py-1.5 px-3 text-xs">Full Ledger</a>
+                </div>
+
+                <div class="h-64 relative rounded-lg bg-[#28241F]/55 border border-white/5 p-3">
+                    <canvas id="revenue-chart" aria-label="Revenue chart"></canvas>
+                </div>
+
+                <details class="text-xs text-[#BFB4A5]">
+                    <summary class="cursor-pointer hover:text-[#D2B077]">View accessible revenue table</summary>
+                    <div class="mt-2 overflow-x-auto max-h-44">
+                        <table class="abc-table">
+                            <thead><tr><th>Date</th><th>Orders</th><th class="text-right">Revenue</th></tr></thead>
+                            <tbody id="dash-revenue-table-body"></tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+
+            <div class="lg:col-span-4 abc-panel p-5 flex flex-col justify-between gap-4">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Inventory Status</h2>
+                        <a href="{{ route('products.index') }}" class="text-xs text-[#D2B077] hover:underline">Stock list</a>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 text-xs text-[#BFB4A5]">
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#E07A7A]"></span>Sold out</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#E0A85B]"></span>Low stock</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#9CAF94]"></span>Available</span>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    @foreach(['7d' => 'Last 7 Days', '14d' => 'Last 14 Days', '30d' => 'Last 30 Days'] as $key => $label)
-                        <button type="button"
-                                data-dash-preset="{{ $key }}"
-                                aria-pressed="{{ $preset === $key ? 'true' : 'false' }}"
-                                class="{{ $preset === $key ? 'abc-btn-primary' : 'abc-btn-secondary' }} py-1.5 px-3 text-xs">
-                            {{ $label }}
-                        </button>
+                <div class="grid grid-cols-3 gap-3">
+                    @foreach([
+                        ['label' => 'Sold out', 'count' => $inv['sold_out_count'], 'pct' => $inv['sold_out_pct'], 'bar' => 'bg-[#E07A7A]', 'text' => 'text-[#E07A7A]', 'filter' => 'sold_out'],
+                        ['label' => 'Low stock', 'count' => $inv['low_stock_count'], 'pct' => $inv['low_stock_pct'], 'bar' => 'bg-[#E0A85B]', 'text' => 'text-[#E0A85B]', 'filter' => 'low_stock'],
+                        ['label' => 'Available', 'count' => $inv['available_count'], 'pct' => $inv['available_pct'], 'bar' => 'bg-[#9CAF94]', 'text' => 'text-[#9CAF94]', 'filter' => 'active'],
+                    ] as $pillar)
+                        <a href="{{ route('products.index', ['status' => $pillar['filter']]) }}" class="abc-surface p-3 flex flex-col items-center gap-2 hover:border-[#D2B077]/40 transition-colors">
+                            <div class="text-xs font-semibold tabular-nums {{ $pillar['text'] }}">{{ $pillar['count'] }}</div>
+                            <div class="w-6 h-32 rounded-md bg-[#161412] flex items-end overflow-hidden p-0.5">
+                                <div class="w-full rounded {{ $pillar['bar'] }}" style="height: {{ max(8, $pillar['pct']) }}%"></div>
+                            </div>
+                            <div class="text-[11px] text-[#BFB4A5] text-center">{{ $pillar['label'] }}</div>
+                        </a>
                     @endforeach
                 </div>
-            </div>
 
-            <div id="dash-chart-status" class="hidden text-xs text-[#BDB5AA]" role="status"></div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div class="xl:col-span-2 space-y-3">
-                    <h3 class="text-sm font-semibold text-[#F5F0E8]">Daily Revenue Trend</h3>
-                    <div class="h-72 relative">
-                        <canvas id="revenue-chart" aria-label="Daily revenue chart"></canvas>
+                @if($metrics['low_stock_products']->isNotEmpty())
+                    <div class="pt-3 border-t border-white/10 space-y-1.5">
+                        <div class="text-xs font-medium text-[#BFB4A5]">Needs Attention</div>
+                        @foreach($metrics['low_stock_products']->take(3) as $item)
+                            <div class="flex items-center justify-between text-xs">
+                                <a href="{{ route('products.edit', $item) }}" class="text-[#F4EEE5] hover:text-[#D2B077] truncate pr-2">{{ $item->name }}</a>
+                                <span class="tabular-nums font-medium {{ $item->isSoldOut() ? 'text-[#E07A7A]' : 'text-[#E0A85B]' }}">
+                                    {{ $item->isSoldOut() ? 'Sold out' : $item->stock_quantity . ' left' }}
+                                </span>
+                            </div>
+                        @endforeach
                     </div>
-                    <details class="text-xs text-[#BDB5AA]">
-                        <summary class="cursor-pointer hover:text-[#C6A66B]">View accessible revenue table</summary>
-                        <div class="mt-2 overflow-x-auto max-h-48">
-                            <table class="abc-table">
-                                <thead><tr><th>Date</th><th>Orders</th><th class="text-right">Revenue</th></tr></thead>
-                                <tbody id="dash-revenue-table-body"></tbody>
-                            </table>
-                        </div>
-                    </details>
-                </div>
-
-                <div class="space-y-3">
-                    <h3 class="text-sm font-semibold text-[#F5F0E8]">Top-Selling Products</h3>
-                    <div class="h-72 relative">
-                        <canvas id="top-products-chart" aria-label="Top selling products chart"></canvas>
-                    </div>
-                    <details class="text-xs text-[#BDB5AA]">
-                        <summary class="cursor-pointer hover:text-[#C6A66B]">View accessible top products table</summary>
-                        <div class="mt-2 overflow-x-auto max-h-48">
-                            <table class="abc-table">
-                                <thead><tr><th>Product</th><th>Units</th><th class="text-right">Revenue</th></tr></thead>
-                                <tbody id="dash-top-table-body"></tbody>
-                            </table>
-                        </div>
-                    </details>
-                </div>
+                @endif
             </div>
         </section>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <section class="abc-panel p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Recent Orders</h2>
-                    <a href="{{ route('sales.index') }}" class="text-xs font-medium text-[#C6A66B] hover:underline">View all sales</a>
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-8 abc-panel overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.14em] text-[#BFB4A5]">Recent Orders</div>
+                        <h2 id="dash-recent-heading" class="font-display text-2xl font-semibold text-[#F4EEE5]">{{ $metrics['range']['label'] }}</h2>
+                    </div>
+                    <a href="{{ route('sales.index') }}" class="text-xs font-medium text-[#D2B077] hover:underline">View all</a>
                 </div>
 
-                @if($metrics['recent_orders']->isEmpty())
-                    <x-empty-state title="No completed orders yet" description="Completed POS and Record Sale checkouts will appear here." />
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="abc-table">
-                            <thead>
+                <div class="overflow-x-auto">
+                    <table class="abc-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Order Items</th>
+                                <th>Customer</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-recent-orders-body">
+                            @forelse($recentSerialized as $ord)
                                 <tr>
-                                    <th>Order</th>
-                                    <th>Customer</th>
-                                    <th>Cashier</th>
-                                    <th class="text-right">Total</th>
+                                    <td class="tabular-nums whitespace-nowrap">
+                                        <a href="{{ $ord['show_url'] }}" class="font-medium text-[#D2B077] hover:underline">{{ $ord['order_number'] }}</a>
+                                        <div class="text-xs text-[#BFB4A5]">{{ $ord['created_at_manila'] }}</div>
+                                    </td>
+                                    <td class="text-sm text-[#F4EEE5]">{{ $ord['items_summary'] }}</td>
+                                    <td class="text-sm text-[#BFB4A5]">{{ $ord['customer_name'] }}</td>
+                                    <td class="text-right font-semibold tabular-nums text-[#F4EEE5]">{{ $ord['total_formatted'] }}</td>
+                                    <td class="text-right whitespace-nowrap">
+                                        <a href="{{ $ord['receipt_url'] }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($metrics['recent_orders'] as $order)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ route('orders.show', $order) }}" class="font-medium text-[#C6A66B] hover:underline tabular-nums">{{ $order->order_number }}</a>
-                                            <div class="text-xs text-[#BDB5AA]">{{ BusinessTime::format($order->created_at) }}</div>
-                                        </td>
-                                        <td>{{ $order->customer_name_snapshot }}</td>
-                                        <td>{{ $order->staff_name_snapshot }}</td>
-                                        <td class="text-right font-semibold tabular-nums">{{ Money::formatPhp($order->total_amount) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </section>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-sm text-[#BFB4A5] py-8">No completed orders in this period.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            <section class="abc-panel p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Low &amp; Out-of-Stock Items</h2>
-                    <a href="{{ route('products.index', ['status' => 'low_stock']) }}" class="text-xs font-medium text-[#C6A66B] hover:underline">Manage inventory</a>
+            <div class="lg:col-span-4 abc-panel p-5 space-y-4">
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-[0.14em] text-[#BFB4A5]">Best Sellers</div>
+                    <h2 id="dash-top-heading" class="font-display text-2xl font-semibold text-[#F4EEE5]">{{ $metrics['range']['label'] }}</h2>
                 </div>
 
-                @if($metrics['low_stock_products']->isEmpty())
-                    <x-empty-state title="All active menu items stocked" description="No active products are currently at or below their low-stock threshold." />
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="abc-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Status</th>
-                                    <th class="text-right">Remaining</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($metrics['low_stock_products'] as $product)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ route('products.edit', $product) }}" class="font-medium text-[#F5F0E8] hover:text-[#C6A66B]">{{ $product->name }}</a>
-                                            <div class="text-xs text-[#BDB5AA]">{{ $product->category?->name ?? 'Uncategorized' }}</div>
-                                        </td>
-                                        <td>
-                                            @if($product->isSoldOut())
-                                                <x-status-badge tone="danger">Sold out</x-status-badge>
-                                            @else
-                                                <x-status-badge tone="warning">Low stock</x-status-badge>
-                                            @endif
-                                        </td>
-                                        <td class="text-right font-semibold tabular-nums">
-                                            {{ $product->stock_quantity }} / {{ $product->low_stock_threshold }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </section>
-        </div>
+                <div id="dash-best-sellers-list" class="space-y-3">
+                    @forelse($metrics['top_products'] as $item)
+                        <div class="abc-surface p-3 space-y-1.5">
+                            <div class="flex items-center justify-between gap-2 text-sm">
+                                <span class="font-medium text-[#F4EEE5] truncate">{{ $item['name'] }}</span>
+                                <span class="text-xs font-semibold text-[#D2B077] tabular-nums shrink-0">{{ $item['revenue_formatted'] }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-[#BFB4A5] tabular-nums">
+                                <span>{{ $item['units_sold'] }} units sold</span>
+                                <span>{{ $item['share_percent'] }}%</span>
+                            </div>
+                            <div class="h-1.5 rounded-full bg-[#161412] overflow-hidden">
+                                <div class="h-full rounded-full bg-[#D2B077]" style="width: {{ $item['share_percent'] }}%"></div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-sm text-[#BFB4A5] py-6 text-center">No product sales recorded in this period.</div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
     </div>
 
     @push('scripts')

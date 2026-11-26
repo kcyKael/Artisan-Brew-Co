@@ -7,8 +7,8 @@ use App\Support\BusinessTime;
     <div class="max-w-4xl mx-auto space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F5F0E8]">{{ $customer->full_name }}</h1>
-                <p class="text-sm text-[#BDB5AA] mt-1">{{ $customer->displayIdentifier() }}</p>
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5]">{{ $customer->full_name }}</h1>
+                <p class="text-sm text-[#BFB4A5] mt-1">{{ $customer->displayIdentifier() }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('customers.index') }}" class="abc-btn-secondary">All Customers</a>
@@ -27,17 +27,17 @@ use App\Support\BusinessTime;
         </div>
 
         <div class="abc-panel p-5 space-y-2 text-sm">
-            <div><span class="text-[#BDB5AA]">Joined:</span> {{ BusinessTime::format($customer->created_at, 'M j, Y') }}</div>
-            <div><span class="text-[#BDB5AA]">Notes:</span> {{ $customer->notes ?: 'No notes recorded.' }}</div>
+            <div><span class="text-[#BFB4A5]">Joined:</span> {{ BusinessTime::format($customer->created_at, 'M j, Y') }}</div>
+            <div><span class="text-[#BFB4A5]">Notes:</span> {{ $customer->notes ?: 'No notes recorded.' }}</div>
         </div>
 
         <div class="abc-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-white/10">
-                <h2 class="font-display text-2xl font-semibold text-[#F5F0E8]">Order History</h2>
+                <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Order History</h2>
             </div>
 
             @if($orders->isEmpty())
-                <div class="p-6 text-sm text-[#BDB5AA]">No orders recorded for this customer yet.</div>
+                <div class="p-6 text-sm text-[#BFB4A5]">No orders recorded for this customer yet.</div>
             @else
                 <div class="overflow-x-auto">
                     <table class="abc-table">
@@ -57,7 +57,7 @@ use App\Support\BusinessTime;
 $canViewOrder = auth()->user()->can('view', $order);
 @endphp
                                 <tr>
-                                    <td class="tabular-nums font-medium text-[#C6A66B]">
+                                    <td class="tabular-nums font-medium text-[#D2B077]">
                                         @if($canViewOrder)
                                             <a href="{{ route('orders.show', $order) }}" class="hover:underline">{{ $order->order_number }}</a>
                                         @else
@@ -67,12 +67,12 @@ $canViewOrder = auth()->user()->can('view', $order);
                                     <td>{{ $order->staff_name_snapshot }}</td>
                                     <td class="text-right tabular-nums">{{ $order->sales_count }}</td>
                                     <td class="text-right font-semibold tabular-nums">{{ Money::formatPhp($order->total_amount) }}</td>
-                                    <td class="text-xs text-[#BDB5AA]">{{ BusinessTime::format($order->created_at) }}</td>
+                                    <td class="text-xs text-[#BFB4A5]">{{ BusinessTime::format($order->created_at) }}</td>
                                     <td class="text-right">
                                         @if($canViewOrder)
                                             <a href="{{ route('orders.receipt', $order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
                                         @else
-                                            <span class="text-xs text-[#BDB5AA]">Other cashier</span>
+                                            <span class="text-xs text-[#BFB4A5]">Other cashier</span>
                                         @endif
                                     </td>
                                 </tr>

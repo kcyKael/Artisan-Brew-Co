@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     cb.type = 'checkbox';
                     cb.name = 'addon_ids[]';
                     cb.value = String(a.id);
-                    cb.className = 'accent-[#C6A66B]';
+                    cb.className = 'accent-[#D2B077]';
                     if (useOldValues && oldAddons.includes(a.id)) {
                         cb.checked = true;
                     }
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     left.appendChild(name);
 
                     const price = document.createElement('span');
-                    price.className = 'text-xs text-[#BDB5AA] tabular-nums';
+                    price.className = 'text-xs text-[#BFB4A5] tabular-nums';
                     price.textContent = `+${formatPhp(a.price_centavos)}`;
 
                     label.appendChild(left);

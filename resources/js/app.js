@@ -1,4 +1,21 @@
-document.addEventListener('DOMContentLoaded', () => {
+const initAppShell = () => {
+    const clockEl = document.querySelector('[data-live-clock]');
+    if (clockEl) {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Manila',
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
+        const updateClock = () => {
+            clockEl.textContent = fmt.format(new Date()).replace(',', '') + ' PHT';
+        };
+        updateClock();
+        window.setInterval(updateClock, 30000);
+    }
 
     const drawer = document.getElementById('mobile-nav-drawer');
     const openBtn = document.getElementById('mobile-nav-open');
@@ -8,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!drawer) return;
         drawer.classList.toggle('hidden', !open);
         document.body.classList.toggle('overflow-hidden', open);
+        openBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
             const firstLink = drawer.querySelector('a, button');
             firstLink?.focus();
@@ -82,4 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAppShell);
+} else {
+    initAppShell();
+}

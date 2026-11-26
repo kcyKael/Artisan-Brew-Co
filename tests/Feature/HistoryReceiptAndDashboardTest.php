@@ -105,11 +105,16 @@ class HistoryReceiptAndDashboardTest extends TestCase
         $this->assertSame('₱875.00', $metrics['today']['average_order_formatted']);
 
         $this->actingAs($admin);
-        $this->get('/dashboard')->assertOk()->assertSee('₱875.00');
+        $this->get('/dashboard')->assertOk()->assertSee('₱875.00')->assertSee('Inventory Status');
         $this->get('/dashboard/metrics?preset=7d')
             ->assertOk()
             ->assertJsonPath('today.orders_count', 1)
             ->assertJsonPath('today.units_sold', 5)
-            ->assertJsonPath('today.revenue_formatted', '₱875.00');
+            ->assertJsonPath('today.revenue_formatted', '₱875.00')
+            ->assertJsonPath('inventory_status.active_menu_count', 2)
+            ->assertJsonPath('inventory_status.available_count', 2);
+        $this->get('/dashboard/metrics?preset=all')
+            ->assertOk()
+            ->assertJsonPath('selected_range.orders_count', 1);
     }
 }

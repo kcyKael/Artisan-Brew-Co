@@ -1,9 +1,9 @@
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="Pagination Navigation" class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 text-sm">
-        <div class="text-[#BDB5AA] tabular-nums">
-            Showing <span class="font-medium text-[#F5F0E8]">{{ $paginator->firstItem() }}</span>
-            to <span class="font-medium text-[#F5F0E8]">{{ $paginator->lastItem() }}</span>
-            of <span class="font-medium text-[#F5F0E8]">{{ $paginator->total() }}</span> results
+        <div class="text-[#BFB4A5] tabular-nums">
+            Showing <span class="font-medium text-[#F4EEE5]">{{ $paginator->firstItem() }}</span>
+            to <span class="font-medium text-[#F4EEE5]">{{ $paginator->lastItem() }}</span>
+            of <span class="font-medium text-[#F4EEE5]">{{ $paginator->total() }}</span> results
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -15,7 +15,7 @@
 
             @foreach ($elements as $element)
                 @if (is_string($element))
-                    <span class="px-2 text-[#BDB5AA]">{{ $element }}</span>
+                    <span class="px-2 text-[#BFB4A5]">{{ $element }}</span>
                 @endif
 
                 @if (is_array($element))

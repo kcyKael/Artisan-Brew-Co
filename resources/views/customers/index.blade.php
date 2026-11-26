@@ -2,15 +2,15 @@
     <div class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F5F0E8]">Customers</h1>
-                <p class="text-sm text-[#BDB5AA] mt-1">Manage cafe customer profiles. Walk-in sales do not require a customer record.</p>
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5]">Customers</h1>
+                <p class="text-sm text-[#BFB4A5] mt-1">Manage cafe customer profiles. Walk-in sales do not require a customer record.</p>
             </div>
             <a href="{{ route('customers.create') }}" class="abc-btn-primary self-start sm:self-auto">Add Customer</a>
         </div>
 
         <form method="GET" action="{{ route('customers.index') }}" class="abc-panel p-4 flex flex-wrap gap-3 items-end">
             <div class="flex-1 min-w-[220px] space-y-1">
-                <label for="cust-search" class="block text-xs font-medium text-[#BDB5AA]">Search Customers</label>
+                <label for="cust-search" class="block text-xs font-medium text-[#BFB4A5]">Search Customers</label>
                 <input id="cust-search" name="search" type="search" value="{{ $search }}" class="abc-input text-sm py-2" placeholder="Name, email, or phone...">
             </div>
             <button type="submit" class="abc-btn-primary py-2 px-4 text-xs">Search</button>
@@ -40,12 +40,12 @@
                             @foreach($customers as $customer)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('customers.show', $customer) }}" class="font-medium text-[#F5F0E8] hover:text-[#C6A66B]">
+                                        <a href="{{ route('customers.show', $customer) }}" class="font-medium text-[#F4EEE5] hover:text-[#D2B077]">
                                             {{ $customer->full_name }}
                                         </a>
                                     </td>
-                                    <td class="text-sm text-[#BDB5AA]">{{ $customer->email }}</td>
-                                    <td class="text-sm text-[#BDB5AA] tabular-nums">{{ $customer->phone ?: '—' }}</td>
+                                    <td class="text-sm text-[#BFB4A5]">{{ $customer->email }}</td>
+                                    <td class="text-sm text-[#BFB4A5] tabular-nums">{{ $customer->phone ?: '—' }}</td>
                                     <td class="text-right tabular-nums">{{ $customer->orders_count }}</td>
                                     <td class="text-right whitespace-nowrap">
                                         <div class="inline-flex items-center gap-2">
