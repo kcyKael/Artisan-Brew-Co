@@ -13,6 +13,12 @@ function toCentavos(value) {
     return Math.round(num * 100);
 }
 
+function formatPaymentMethodLabel(method) {
+    if (method === 'gcash') return 'GCash';
+    if (method === 'card') return 'Card';
+    return 'Cash';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('pos-app');
     if (!root) return;
@@ -20,12 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalog = JSON.parse(root.dataset.catalog || '[]');
     const checkoutUrl = root.dataset.checkoutUrl;
     const customerSearchUrl = root.dataset.customerSearchUrl;
+    const giftCardLookupUrl = root.dataset.giftCardLookupUrl;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     let checkoutToken = root.dataset.checkoutToken;
     let activeCategory = 'all';
     let searchTerm = '';
+    let orderType = 'dine_in';
+    let paymentMethod = 'cash';
     let selectedPayOption = 'exact';
+    let discountType = 'none';
+    let verifiedGiftCard = null;
+    let editingNoteIndex = null;
     let cart = [];
     let isSubmitting = false;
 
@@ -36,6 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const productCards = document.querySelectorAll('[data-pos-product]');
     const emptyCatalog = document.getElementById('pos-empty-catalog');
 
+    const orderTypeButtons = Array.from(document.querySelectorAll('[data-order-type]'));
+    const paymentMethodButtons = Array.from(document.querySelectorAll('[data-payment-method]'));
+    const discountTypeButtons = Array.from(document.querySelectorAll('[data-discount-type]'));
+
     const cartLinesEl = document.getElementById('pos-cart-lines');
     const cartEmptyEl = document.getElementById('pos-cart-empty');
     const cartLoadingEl = document.getElementById('pos-cart-loading');
@@ -43,12 +59,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartCountBadge = document.getElementById('pos-cart-count');
     const mobileCartCount = document.getElementById('pos-mobile-cart-count');
     const mobileCartTotal = document.getElementById('pos-mobile-cart-total');
-    const subtotalEl = document.getElementById('pos-subtotal');
-    const totalEl = document.getElementById('pos-total');
-    const cashInput = document.getElementById('pos-cash-received');
-    const changeEl = document.getElementById('pos-change');
+
     const customerSelect = document.getElementById('pos-customer-id');
     const customerFilterInput = document.getElementById('pos-customer-search');
+    const cupNameInput = document.getElementById('pos-cup-name');
+    const orderNoteInput = document.getElementById('pos-order-note');
+
+    const discountValueWrap = document.getElementById('pos-discount-value-wrap');
+    const discountValueInput = document.getElementById('pos-discount-value');
+    const giftCardWrap = document.getElementById('pos-gift-card-wrap');
+    const giftCardCodeInput = document.getElementById('pos-gift-card-code');
+    const giftCardLookupBtn = document.getElementById('pos-gift-card-lookup-btn');
+    const giftCardFeedback = document.getElementById('pos-gift-card-feedback');
+
+    const cashSection = document.getElementById('pos-cash-section');
+    const referenceSection = document.getElementById('pos-reference-section');
+    const paymentRefInput = document.getElementById('pos-payment-reference');
+    const payCards = Array.from(document.querySelectorAll('[data-pay-option]'));
+    const cashInput = document.getElementById('pos-cash-received');
+    const changeEl = document.getElementById('pos-change');
+
+    const subtotalEl = document.getElementById('pos-subtotal');
+    const discountRow = document.getElementById('pos-discount-row');
+    const discountAmountEl = document.getElementById('pos-discount-amount');
+    const totalEl = document.getElementById('pos-total');
+
     const submitBtn = document.getElementById('pos-checkout-btn');
     const checkoutLabel = document.getElementById('pos-checkout-label');
     const clearBtn = document.getElementById('pos-clear-cart-btn');
@@ -58,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sheetBackdrop = document.getElementById('pos-mobile-sheet-backdrop');
     const mobileCartToggle = document.getElementById('pos-mobile-cart-toggle');
     const mobileCartClose = document.getElementById('pos-mobile-cart-close');
-    const payCards = Array.from(document.querySelectorAll('[data-pay-option]'));
 
     const configDialog = document.getElementById('pos-config-dialog');
     const configTitle = document.getElementById('pos-config-title');
@@ -68,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const configVariantsList = document.getElementById('pos-config-variants');
     const configAddonsWrap = document.getElementById('pos-config-addons-wrap');
     const configAddonsList = document.getElementById('pos-config-addons');
+    const configQuickNotes = Array.from(document.querySelectorAll('[data-config-quick-note]'));
+    const configNoteInput = document.getElementById('pos-config-note');
     const configQtyInput = document.getElementById('pos-config-qty');
     const configUnitPreview = document.getElementById('pos-config-unit-preview');
     const configAddBtn = document.getElementById('pos-config-add-btn');
@@ -76,7 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const receiptDialog = document.getElementById('pos-receipt-dialog');
     const successOrderNum = document.getElementById('pos-success-order-num');
     const successTotal = document.getElementById('pos-success-total');
+    const successMethod = document.getElementById('pos-success-method');
+    const successRefRow = document.getElementById('pos-success-ref-row');
+    const successRef = document.getElementById('pos-success-ref');
+    const successCashRow = document.getElementById('pos-success-cash-row');
     const successCash = document.getElementById('pos-success-cash');
+    const successChangeRow = document.getElementById('pos-success-change-row');
     const successChange = document.getElementById('pos-success-change');
     const successDetailLink = document.getElementById('pos-success-detail-link');
     const liveReceiptWrap = document.getElementById('pos-live-receipt-wrap');
@@ -109,17 +150,70 @@ document.addEventListener('DOMContentLoaded', () => {
         sheetBackdrop?.classList.toggle('hidden', !open);
     }
 
+    function styleSegmentedButtons(buttons, activeValue, dataKey) {
+        buttons.forEach((btn) => {
+            const active = btn.dataset[dataKey] === activeValue;
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            btn.classList.toggle('bg-[#D2B077]', active);
+            btn.classList.toggle('text-[#111110]', active);
+            btn.classList.toggle('font-semibold', active);
+            btn.classList.toggle('text-[#BFB4A5]', !active);
+            btn.classList.toggle('font-medium', !active);
+        });
+    }
+
+    function applyOrderType(type) {
+        orderType = type === 'take_out' ? 'take_out' : 'dine_in';
+        styleSegmentedButtons(orderTypeButtons, orderType, 'orderType');
+    }
+
+    function applyPaymentMethod(method) {
+        paymentMethod = ['cash', 'card', 'gcash'].includes(method) ? method : 'cash';
+        styleSegmentedButtons(paymentMethodButtons, paymentMethod, 'paymentMethod');
+        cashSection?.classList.toggle('hidden', paymentMethod !== 'cash');
+        referenceSection?.classList.toggle('hidden', paymentMethod === 'cash');
+        clearError();
+        updatePaymentSummary(false);
+    }
+
+    function applyDiscountType(type) {
+        discountType = ['none', 'percent', 'fixed', 'giftcard'].includes(type) ? type : 'none';
+        styleSegmentedButtons(discountTypeButtons, discountType, 'discountType');
+
+        const showValue = discountType === 'percent' || discountType === 'fixed';
+        discountValueWrap?.classList.toggle('hidden', !showValue);
+        if (discountValueInput) {
+            discountValueInput.placeholder = discountType === 'percent' ? 'Discount % (1 - 100)' : 'Discount amount (₱)';
+            discountValueInput.max = discountType === 'percent' ? '100' : '';
+        }
+
+        giftCardWrap?.classList.toggle('hidden', discountType !== 'giftcard');
+        if (discountType !== 'giftcard') {
+            verifiedGiftCard = null;
+            if (giftCardFeedback) {
+                giftCardFeedback.classList.add('hidden');
+                giftCardFeedback.textContent = '';
+            }
+        }
+
+        clearError();
+        updatePaymentSummary(true);
+    }
+
     function applyPayOption(option, focusCustom = false) {
         selectedPayOption = option;
         payCards.forEach((card) => {
             const active = card.dataset.payOption === option;
             card.setAttribute('aria-checked', active ? 'true' : 'false');
             card.setAttribute('tabindex', active ? '0' : '-1');
-            const badge = card.querySelector('[data-pay-check]');
-            if (badge) {
-                badge.classList.toggle('hidden', !active);
-                badge.classList.toggle('flex', active);
-            }
+            card.classList.toggle('border-[#D2B077]', active);
+            card.classList.toggle('bg-[#D2B077]/15', active);
+            card.classList.toggle('text-[#F4EEE5]', active);
+            card.classList.toggle('font-semibold', active);
+            card.classList.toggle('border-white/10', !active);
+            card.classList.toggle('bg-[#28241F]', !active);
+            card.classList.toggle('text-[#BFB4A5]', !active);
+            card.classList.toggle('font-medium', !active);
         });
 
         const { totalCentavos } = computeTotals();
@@ -136,6 +230,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updatePaymentSummary(true);
     }
+
+    orderTypeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => applyOrderType(btn.dataset.orderType));
+    });
+
+    paymentMethodButtons.forEach((btn) => {
+        btn.addEventListener('click', () => applyPaymentMethod(btn.dataset.paymentMethod));
+    });
+
+    discountTypeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => applyDiscountType(btn.dataset.discountType));
+    });
+
+    discountValueInput?.addEventListener('input', () => updatePaymentSummary(false));
+
+    async function lookupGiftCard() {
+        if (!giftCardLookupUrl || !giftCardCodeInput || !giftCardFeedback) return;
+        const code = giftCardCodeInput.value.trim().toUpperCase();
+        giftCardCodeInput.value = code;
+        if (!code) {
+            verifiedGiftCard = null;
+            giftCardFeedback.classList.remove('hidden');
+            giftCardFeedback.className = 'text-xs text-[#E07A7A]';
+            giftCardFeedback.textContent = 'Enter a gift card code first.';
+            updatePaymentSummary(false);
+            return;
+        }
+
+        giftCardFeedback.classList.remove('hidden');
+        giftCardFeedback.className = 'text-xs text-[#BFB4A5]';
+        giftCardFeedback.textContent = 'Checking gift card...';
+
+        try {
+            const res = await fetch(`${giftCardLookupUrl}?code=${encodeURIComponent(code)}`, {
+                headers: { Accept: 'application/json' },
+            });
+            const data = await res.json();
+            if (res.ok && data.valid) {
+                verifiedGiftCard = data;
+                giftCardFeedback.className = 'text-xs text-[#9CAF94]';
+                giftCardFeedback.textContent = `Valid · Balance: ${data.remaining_formatted}`;
+            } else {
+                verifiedGiftCard = null;
+                giftCardFeedback.className = 'text-xs text-[#E07A7A]';
+                giftCardFeedback.textContent = 'Invalid, expired, or zero-balance gift card.';
+            }
+        } catch {
+            verifiedGiftCard = null;
+            giftCardFeedback.className = 'text-xs text-[#E07A7A]';
+            giftCardFeedback.textContent = 'Unable to verify gift card right now.';
+        }
+
+        updatePaymentSummary(true);
+    }
+
+    giftCardLookupBtn?.addEventListener('click', lookupGiftCard);
+    giftCardCodeInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            lookupGiftCard();
+        }
+    });
+    giftCardCodeInput?.addEventListener('input', () => {
+        if (verifiedGiftCard && verifiedGiftCard.code !== giftCardCodeInput.value.trim().toUpperCase()) {
+            verifiedGiftCard = null;
+            updatePaymentSummary(false);
+        }
+    });
 
     payCards.forEach((card, index) => {
         card.addEventListener('click', () => {
@@ -215,27 +377,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function computeTotals() {
-        let totalCentavos = 0;
+        let subtotalCentavos = 0;
         let totalQty = 0;
 
         cart.forEach((line) => {
-            totalCentavos += line.unit_centavos * line.quantity;
+            subtotalCentavos += line.unit_centavos * line.quantity;
             totalQty += line.quantity;
         });
 
-        return { totalCentavos, totalQty };
+        let discountCentavos = 0;
+        if (subtotalCentavos > 0) {
+            if (discountType === 'percent') {
+                const pct = Number.parseFloat(discountValueInput?.value || '0');
+                if (Number.isFinite(pct) && pct > 0 && pct <= 100) {
+                    discountCentavos = Math.min(
+                        subtotalCentavos,
+                        Math.floor((subtotalCentavos * Math.round(pct * 100)) / 10000)
+                    );
+                }
+            } else if (discountType === 'fixed') {
+                const fixedCentavos = toCentavos(discountValueInput?.value);
+                if (fixedCentavos > 0) {
+                    discountCentavos = Math.min(subtotalCentavos, fixedCentavos);
+                }
+            } else if (discountType === 'giftcard' && verifiedGiftCard?.valid) {
+                const remaining = toCentavos(verifiedGiftCard.remaining_balance);
+                if (remaining > 0) {
+                    discountCentavos = Math.min(subtotalCentavos, remaining);
+                }
+            }
+        }
+
+        const totalCentavos = Math.max(0, subtotalCentavos - discountCentavos);
+
+        return { subtotalCentavos, discountCentavos, totalCentavos, totalQty };
     }
 
     function updatePaymentSummary(animateTick = false) {
-        const { totalCentavos, totalQty } = computeTotals();
-        if (selectedPayOption === 'exact' && cashInput) {
+        const { subtotalCentavos, discountCentavos, totalCentavos, totalQty } = computeTotals();
+        if (paymentMethod === 'cash' && selectedPayOption === 'exact' && cashInput) {
             cashInput.value = totalCentavos > 0 ? (totalCentavos / 100).toFixed(2) : '';
         }
 
         const cashCentavos = toCentavos(cashInput?.value);
         const changeCentavos = cashCentavos - totalCentavos;
 
-        if (subtotalEl) subtotalEl.textContent = formatPhp(totalCentavos);
+        if (subtotalEl) subtotalEl.textContent = formatPhp(subtotalCentavos);
+        if (discountRow && discountAmountEl) {
+            discountRow.classList.toggle('hidden', discountCentavos <= 0);
+            discountAmountEl.textContent = `-${formatPhp(discountCentavos)}`;
+        }
         if (totalEl) totalEl.textContent = formatPhp(totalCentavos);
         if (cartCountBadge) cartCountBadge.textContent = String(totalQty);
         if (mobileCartCount) mobileCartCount.textContent = String(totalQty);
@@ -244,13 +435,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (changeEl) {
             if (totalCentavos === 0) {
                 changeEl.textContent = '₱0.00';
-                changeEl.className = 'tabular-nums font-semibold text-[#BFB4A5]';
+                changeEl.className = 'text-xs tabular-nums font-semibold text-[#BFB4A5]';
             } else if (changeCentavos < 0) {
                 changeEl.textContent = `Short ${formatPhp(Math.abs(changeCentavos))}`;
-                changeEl.className = 'tabular-nums font-semibold text-[#E07A7A]';
+                changeEl.className = 'text-xs tabular-nums font-semibold text-[#E07A7A]';
             } else {
                 changeEl.textContent = formatPhp(changeCentavos);
-                changeEl.className = 'tabular-nums font-semibold text-[#22A85B]';
+                changeEl.className = 'text-xs tabular-nums font-semibold text-[#22A85B]';
             }
         }
 
@@ -260,8 +451,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (submitBtn) {
-            submitBtn.disabled = isSubmitting || cart.length === 0 || cashCentavos < totalCentavos;
+            const insufficientCash = paymentMethod === 'cash' && cashCentavos < totalCentavos;
+            submitBtn.disabled = isSubmitting || cart.length === 0 || insufficientCash;
         }
+    }
+
+    function createPlaceholderSvg() {
+        const wrap = document.createElement('div');
+        wrap.className = 'h-full w-full flex items-center justify-center bg-gradient-to-br from-[#28241F] to-[#1A1714] text-[#D2B077]/80';
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>';
+        return wrap;
     }
 
     function renderCart() {
@@ -290,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.className = 'w-full h-full object-cover';
                 thumb.appendChild(img);
             } else {
-                thumb.innerHTML = '<svg class="w-5 h-5 text-[#D2B077]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17 8h1a3 3 0 010 6h-1M4 8h13v6a5 5 0 01-5 5H9a5 5 0 01-5-5V8z"/></svg>';
+                thumb.appendChild(createPlaceholderSvg());
             }
 
             const body = document.createElement('div');
@@ -321,12 +521,73 @@ document.addEventListener('DOMContentLoaded', () => {
                 info.appendChild(aLabel);
             });
 
+            if (editingNoteIndex === idx) {
+                const noteForm = document.createElement('div');
+                noteForm.className = 'flex items-center gap-1.5 mt-1.5';
+
+                const noteInput = document.createElement('input');
+                noteInput.type = 'text';
+                noteInput.maxLength = 120;
+                noteInput.value = line.note || '';
+                noteInput.placeholder = 'Item note (e.g., Less Ice)';
+                noteInput.className = 'abc-input text-xs py-1 px-2';
+
+                const saveNote = () => {
+                    line.note = noteInput.value.trim().slice(0, 120) || null;
+                    editingNoteIndex = null;
+                    renderCart();
+                };
+
+                noteInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveNote();
+                    } else if (e.key === 'Escape') {
+                        editingNoteIndex = null;
+                        renderCart();
+                    }
+                });
+
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'text-xs font-semibold text-[#D2B077] hover:text-[#DFC08B] px-2 py-1 rounded bg-[#161412] border border-white/10 shrink-0';
+                saveBtn.textContent = 'Save';
+                saveBtn.addEventListener('click', saveNote);
+
+                noteForm.append(noteInput, saveBtn);
+                info.appendChild(noteForm);
+                window.setTimeout(() => noteInput.focus(), 0);
+            } else {
+                const noteWrap = document.createElement('div');
+                noteWrap.className = 'flex flex-wrap items-center gap-1.5 mt-1';
+
+                if (line.note) {
+                    const noteTag = document.createElement('span');
+                    noteTag.className = 'inline-block text-[11px] px-2 py-0.5 rounded bg-[#D2B077]/15 text-[#D2B077]';
+                    noteTag.textContent = line.note;
+                    noteWrap.appendChild(noteTag);
+                }
+
+                const noteBtn = document.createElement('button');
+                noteBtn.type = 'button';
+                noteBtn.className = 'text-[11px] text-[#BFB4A5] hover:text-[#D2B077] underline-offset-2 hover:underline';
+                noteBtn.textContent = line.note ? 'Edit note' : '+ Note';
+                noteBtn.addEventListener('click', () => {
+                    editingNoteIndex = idx;
+                    renderCart();
+                });
+
+                noteWrap.appendChild(noteBtn);
+                info.appendChild(noteWrap);
+            }
+
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'text-xs text-[#BFB4A5] hover:text-[#E07A7A] px-1.5 py-0.5 rounded shrink-0';
             removeBtn.setAttribute('aria-label', `Remove ${line.name}`);
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', () => {
+                editingNoteIndex = null;
                 cart.splice(idx, 1);
                 clearError();
                 renderCart();
@@ -343,13 +604,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const decBtn = document.createElement('button');
             decBtn.type = 'button';
-            decBtn.className = 'w-9 h-9 rounded-md text-sm font-semibold text-[#F4EEE5] hover:bg-white/10 active:text-[#D2B077]';
+            decBtn.className = 'w-8 h-8 rounded-md text-sm font-semibold text-[#F4EEE5] hover:bg-white/10 active:text-[#D2B077]';
             decBtn.setAttribute('aria-label', `Decrease quantity of ${line.name}`);
             decBtn.textContent = '−';
             decBtn.addEventListener('click', () => {
                 if (line.quantity > 1) {
                     line.quantity -= 1;
                 } else {
+                    editingNoteIndex = null;
                     cart.splice(idx, 1);
                 }
                 clearError();
@@ -362,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const incBtn = document.createElement('button');
             incBtn.type = 'button';
-            incBtn.className = 'w-9 h-9 rounded-md text-sm font-semibold text-[#D2B077] hover:bg-white/10 disabled:opacity-40';
+            incBtn.className = 'w-8 h-8 rounded-md text-sm font-semibold text-[#D2B077] hover:bg-white/10 disabled:opacity-40';
             incBtn.setAttribute('aria-label', `Increase quantity of ${line.name}`);
             incBtn.textContent = '+';
             incBtn.addEventListener('click', () => {
@@ -405,13 +667,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePaymentSummary(true);
     }
 
-    function addLineToCart(product, variant, selectedAddons, quantity) {
+    function addLineToCart(product, variant, selectedAddons, quantity, note = null) {
         const currentInCart = cartTotalForProduct(product.id);
         if (currentInCart + quantity > product.stock_quantity) {
             showError(`Insufficient stock for ${product.name}. Available: ${product.stock_quantity}, already in cart: ${currentInCart}.`);
             return false;
         }
 
+        const normalizedNote = (note || '').trim().slice(0, 120) || null;
         const addonIds = selectedAddons.map((a) => a.id).sort((a, b) => a - b);
         const unitCentavos =
             product.price_centavos +
@@ -422,7 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
             (line) =>
                 line.product_id === product.id &&
                 line.product_variant_id === (variant ? variant.id : null) &&
-                JSON.stringify(line.addon_ids) === JSON.stringify(addonIds)
+                JSON.stringify(line.addon_ids) === JSON.stringify(addonIds) &&
+                (line.note || null) === normalizedNote
         );
 
         if (existing) {
@@ -438,6 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 addon_names: selectedAddons.map((a) => a.name),
                 unit_centavos: unitCentavos,
                 quantity,
+                note: normalizedNote,
             });
         }
 
@@ -470,15 +735,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const meta = document.createElement('div');
         meta.className = 'receipt-line space-y-1 border-b border-dashed border-neutral-300 pb-3 mb-3 text-[11px]';
         meta.style.setProperty('--line-index', '0');
-        [
+
+        const metaRows = [
             ['Date (Manila):', ord.created_at_manila],
+            ['Order Type:', ord.order_type === 'take_out' ? 'Take-out' : 'Dine-in'],
             ['Cashier:', ord.staff_name],
             ['Customer:', ord.customer_name],
-        ].forEach(([label, val]) => {
+        ];
+        if (ord.cup_name) {
+            metaRows.push(['Cup Name:', ord.cup_name]);
+        }
+        if (ord.order_note) {
+            metaRows.push(['Order Note:', ord.order_note]);
+        }
+
+        metaRows.forEach(([label, val]) => {
             const row = document.createElement('div');
             row.className = 'flex justify-between gap-2';
             const l = document.createElement('span');
-            l.className = 'text-[#6B7280]';
+            l.className = 'text-[#6B7280] shrink-0';
             l.textContent = label;
             const v = document.createElement('span');
             v.className = 'font-medium text-right text-[#1A1D21]';
@@ -518,6 +793,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.appendChild(aEl);
             });
 
+            if (line.note) {
+                const nEl = document.createElement('div');
+                nEl.className = 'text-[11px] italic text-[#6B7280] pl-3';
+                nEl.textContent = `Note: ${line.note}`;
+                item.appendChild(nEl);
+            }
+
             linesWrap.appendChild(item);
         });
 
@@ -525,11 +807,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const totals = document.createElement('div');
         totals.className = 'receipt-line space-y-1.5 text-xs border-b border-dashed border-neutral-300 pb-3 mb-3';
         totals.style.setProperty('--line-index', String(totalsIndex));
-        [
-            ['TOTAL (PHP)', ord.total_formatted, 'flex justify-between text-sm font-bold text-[#1A1D21]'],
-            ['Cash Received', ord.cash_formatted, 'flex justify-between text-[11px] text-[#6B7280]'],
-            ['Change Due', ord.change_formatted, 'flex justify-between text-[11px] font-semibold text-[#1A1D21]'],
-        ].forEach(([l, v, cls]) => {
+
+        const totalRows = [];
+        if (Number(ord.discount_amount || 0) > 0) {
+            totalRows.push(['Subtotal', ord.subtotal_formatted, 'flex justify-between text-[11px] text-[#6B7280]']);
+            totalRows.push([
+                ord.discount_label ? `Discount (${ord.discount_label})` : 'Discount',
+                `-${ord.discount_formatted}`,
+                'flex justify-between text-[11px] text-[#6B7280]',
+            ]);
+        }
+        totalRows.push(['TOTAL (PHP)', ord.total_formatted, 'flex justify-between text-sm font-bold text-[#1A1D21]']);
+        totalRows.push(['Payment Method', formatPaymentMethodLabel(ord.payment_method), 'flex justify-between text-[11px] text-[#6B7280]']);
+        if ((ord.payment_method || 'cash') === 'cash') {
+            totalRows.push(['Cash Received', ord.cash_formatted, 'flex justify-between text-[11px] text-[#6B7280]']);
+            totalRows.push(['Change Due', ord.change_formatted, 'flex justify-between text-[11px] font-semibold text-[#1A1D21]']);
+        } else if (ord.payment_reference) {
+            totalRows.push(['Reference #', ord.payment_reference, 'flex justify-between text-[11px] text-[#6B7280]']);
+        }
+
+        totalRows.forEach(([l, v, cls]) => {
             const row = document.createElement('div');
             row.className = cls;
             const lSpan = document.createElement('span');
@@ -549,6 +846,44 @@ document.addEventListener('DOMContentLoaded', () => {
         paper.append(header, meta, linesWrap, totals, footer);
         return paper;
     }
+
+    function syncQuickNoteChips() {
+        const current = (configNoteInput?.value || '')
+            .split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean);
+        configQuickNotes.forEach((chip) => {
+            const val = (chip.dataset.configQuickNote || '').toLowerCase();
+            const active = current.includes(val);
+            chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+            chip.classList.toggle('bg-[#D2B077]', active);
+            chip.classList.toggle('text-[#111110]', active);
+            chip.classList.toggle('font-semibold', active);
+            chip.classList.toggle('bg-[#28241F]', !active);
+            chip.classList.toggle('text-[#BFB4A5]', !active);
+        });
+    }
+
+    configQuickNotes.forEach((chip) => {
+        chip.addEventListener('click', () => {
+            if (!configNoteInput) return;
+            const label = chip.dataset.configQuickNote || '';
+            const parts = configNoteInput.value
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            const existingIdx = parts.findIndex((p) => p.toLowerCase() === label.toLowerCase());
+            if (existingIdx >= 0) {
+                parts.splice(existingIdx, 1);
+            } else {
+                parts.push(label);
+            }
+            configNoteInput.value = parts.join(', ').slice(0, 120);
+            syncQuickNoteChips();
+        });
+    });
+
+    configNoteInput?.addEventListener('input', syncQuickNoteChips);
 
     function updateConfiguratorPreview() {
         if (!configuringProduct) return;
@@ -575,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openConfigurator(product) {
         if (product.variants.length === 0 && product.addons.length === 0) {
-            addLineToCart(product, null, [], 1);
+            addLineToCart(product, null, [], 1, null);
             return;
         }
 
@@ -587,6 +922,8 @@ document.addEventListener('DOMContentLoaded', () => {
             configStockNote.textContent = `${remaining} serving(s) available`;
         }
         if (configQtyInput) configQtyInput.value = '1';
+        if (configNoteInput) configNoteInput.value = '';
+        syncQuickNoteChips();
 
         if (configVariantsList && configVariantsWrap) {
             configVariantsList.innerHTML = '';
@@ -676,7 +1013,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const qty = Math.max(1, Number.parseInt(configQtyInput?.value || '1', 10) || 1);
-        if (addLineToCart(configuringProduct, selectedVariant, selectedAddons, qty)) {
+        const note = configNoteInput?.value || null;
+        if (addLineToCart(configuringProduct, selectedVariant, selectedAddons, qty, note)) {
             configDialog?.close();
         }
     });
@@ -716,9 +1054,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    clearBtn?.addEventListener('click', () => {
+    function resetOrderState() {
         cart = [];
+        editingNoteIndex = null;
+        if (customerSelect) customerSelect.value = '';
+        if (cupNameInput) cupNameInput.value = '';
+        if (orderNoteInput) orderNoteInput.value = '';
+        if (paymentRefInput) paymentRefInput.value = '';
+        if (discountValueInput) discountValueInput.value = '';
+        if (giftCardCodeInput) giftCardCodeInput.value = '';
+        verifiedGiftCard = null;
+        applyOrderType('dine_in');
+        applyDiscountType('none');
+        applyPaymentMethod('cash');
         applyPayOption('exact', false);
+    }
+
+    clearBtn?.addEventListener('click', () => {
+        resetOrderState();
         clearError();
         renderCart();
     });
@@ -773,12 +1126,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             checkout_token: checkoutToken,
             customer_id: customerSelect?.value ? Number(customerSelect.value) : null,
-            cash_received: cashInput?.value || '0',
+            order_type: orderType,
+            payment_method: paymentMethod,
+            payment_reference: paymentMethod === 'cash' ? null : (paymentRefInput?.value.trim() || null),
+            cup_name: cupNameInput?.value.trim() || null,
+            order_note: orderNoteInput?.value.trim() || null,
+            discount_type: discountType,
+            discount_value: discountType === 'percent' || discountType === 'fixed' ? (discountValueInput?.value || null) : null,
+            gift_card_code: discountType === 'giftcard' ? (giftCardCodeInput?.value.trim().toUpperCase() || null) : null,
+            cash_received: paymentMethod === 'cash' ? (cashInput?.value || '0') : null,
             items: cart.map((line) => ({
                 product_id: line.product_id,
                 product_variant_id: line.product_variant_id,
                 addon_ids: line.addon_ids,
                 quantity: line.quantity,
+                note: line.note || null,
             })),
         };
 
@@ -818,9 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateProductStockBadges(data.stocks);
             }
 
-            cart = [];
-            if (customerSelect) customerSelect.value = '';
-            applyPayOption('exact', false);
+            resetOrderState();
             renderCart();
             setMobileSheet(false);
 
@@ -828,8 +1188,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ord = data.order;
                 if (successOrderNum) successOrderNum.textContent = `Receipt ${ord.order_number}`;
                 if (successTotal) successTotal.textContent = ord.total_formatted;
+                if (successMethod) successMethod.textContent = formatPaymentMethodLabel(ord.payment_method);
+
+                const isCash = (ord.payment_method || 'cash') === 'cash';
+                successCashRow?.classList.toggle('hidden', !isCash);
+                successChangeRow?.classList.toggle('hidden', !isCash);
+                successRefRow?.classList.toggle('hidden', isCash || !ord.payment_reference);
+                if (successRef) successRef.textContent = ord.payment_reference || '';
                 if (successCash) successCash.textContent = ord.cash_formatted;
                 if (successChange) successChange.textContent = ord.change_formatted;
+
                 if (successDetailLink) successDetailLink.href = ord.detail_url;
                 if (receiptPrintLink) receiptPrintLink.href = ord.receipt_url;
                 if (liveReceiptWrap) {

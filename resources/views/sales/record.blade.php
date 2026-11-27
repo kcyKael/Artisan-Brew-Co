@@ -61,6 +61,45 @@ use App\Support\Money;
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
+                    <label for="rs-order-type" class="block text-sm font-medium text-[#F4EEE5]">Order Type</label>
+                    <select id="rs-order-type" name="order_type" class="abc-input">
+                        <option value="dine_in" @selected(old('order_type', 'dine_in') === 'dine_in')>Dine-in</option>
+                        <option value="take_out" @selected(old('order_type') === 'take_out')>Take-out</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="rs-payment-method" class="block text-sm font-medium text-[#F4EEE5]">Payment Method</label>
+                    <select id="rs-payment-method" name="payment_method" class="abc-input">
+                        <option value="cash" @selected(old('payment_method', 'cash') === 'cash')>Cash</option>
+                        <option value="card" @selected(old('payment_method') === 'card')>Card</option>
+                        <option value="gcash" @selected(old('payment_method') === 'gcash')>GCash</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label for="rs-cup-name" class="block text-sm font-medium text-[#F4EEE5]">Cup Name (Optional)</label>
+                    <input id="rs-cup-name" name="cup_name" type="text" maxlength="60"
+                           value="{{ old('cup_name') }}" class="abc-input" placeholder="Name on cup (walk-in)">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="rs-payment-reference" class="block text-sm font-medium text-[#F4EEE5]">Payment Reference (Card / GCash)</label>
+                    <input id="rs-payment-reference" name="payment_reference" type="text" maxlength="60"
+                           value="{{ old('payment_reference') }}" class="abc-input" placeholder="Approval / Ref # (optional)">
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <label for="rs-order-note" class="block text-sm font-medium text-[#F4EEE5]">Order Note (Optional)</label>
+                <input id="rs-order-note" name="order_note" type="text" maxlength="200"
+                       value="{{ old('order_note') }}" class="abc-input" placeholder="Order note (optional)">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
                     <label for="rs-quantity" class="block text-sm font-medium text-[#F4EEE5]">Quantity</label>
                     <input id="rs-quantity" name="quantity" type="number" min="1" max="999" step="1" required
                            value="{{ old('quantity', 1) }}" class="abc-input tabular-nums">
@@ -68,7 +107,7 @@ use App\Support\Money;
 
                 <div class="space-y-1.5">
                     <label for="rs-cash-received" class="block text-sm font-medium text-[#F4EEE5]">Cash Received (PHP)</label>
-                    <input id="rs-cash-received" name="cash_received" type="number" min="0" step="0.01" required
+                    <input id="rs-cash-received" name="cash_received" type="number" min="0" step="0.01"
                            value="{{ old('cash_received') }}" class="abc-input tabular-nums" placeholder="0.00">
                 </div>
             </div>
