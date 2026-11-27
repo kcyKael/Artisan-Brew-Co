@@ -16,7 +16,7 @@ class LandingAndPublicMenuTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_landing_page_renders_with_featured_drinks_and_no_inline_scripts(): void
+    public function test_public_landing_page_renders_transparent_hero_cup_intro_and_no_inline_scripts(): void
     {
         $category = Category::query()->create([
             'name' => 'Signature Lattes',
@@ -45,7 +45,13 @@ class LandingAndPublicMenuTest extends TestCase
         $response->assertSee('Savored fully.');
         $response->assertSee('Spanish Latte');
         $response->assertSee('175.00');
-        $response->assertSee('hero-cup-stage');
+        $response->assertSee('images/hero-coffee-cup.webp');
+        $response->assertSee('hero-cup-shadow');
+        $response->assertSee('hero-cup-steam');
+        $response->assertSee('abc-intro-overlay');
+        $response->assertSee('Skip intro');
+        $response->assertSee('images/abc-logo.png');
+        $response->assertDontSee('hero-cup-canvas');
         $this->assertSame(0, preg_match('/<script(?![^>]*\bsrc=)[^>]*>/i', (string) $response->getContent()));
     }
 

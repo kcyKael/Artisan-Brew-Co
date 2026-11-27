@@ -71,7 +71,7 @@
 
     .studio-atmosphere-glow {
         background:
-            radial-gradient(circle at 74% 42%, rgba(210, 176, 119, 0.13) 0%, rgba(74, 48, 28, 0.16) 28%, rgba(22, 20, 18, 0) 64%),
+            radial-gradient(circle at 74% 44%, rgba(210, 176, 119, 0.13) 0%, rgba(74, 48, 28, 0.15) 28%, rgba(22, 20, 18, 0) 64%),
             radial-gradient(circle at 18% 26%, rgba(122, 82, 46, 0.08) 0%, rgba(22, 20, 18, 0) 52%);
     }
 
@@ -148,25 +148,42 @@
         transform: scale(1.045);
     }
 
-    .hero-steam-wisp {
-        animation: heroSteamFloat 7.5s ease-in-out infinite;
+    .hero-cup-shadow {
+        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.42) 48%, rgba(0, 0, 0, 0) 76%);
+        filter: blur(14px);
+        opacity: 0.72;
+        will-change: transform, opacity;
     }
-}
 
-@keyframes heroSteamFloat {
-    0%, 100% {
-        transform: translateY(0) scaleX(1);
-        opacity: 0.34;
+    .steam-ribbon {
+        filter: blur(6px);
+        opacity: 0.24;
+        transform-box: fill-box;
+        transform-origin: center bottom;
     }
-    50% {
-        transform: translateY(-14px) scaleX(1.07);
-        opacity: 0.58;
+
+    .intro-bean {
+        position: absolute;
+        top: -22vh;
+        height: auto;
+        object-fit: contain;
+        opacity: 0;
+        will-change: transform, opacity;
+        filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.55));
+    }
+
+    .intro-bean-blur-mid {
+        filter: blur(1.2px) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.50));
+    }
+
+    .intro-bean-blur-far {
+        filter: blur(3.2px) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .hero-steam-wisp {
-        animation: none;
+    .steam-ribbon {
+        opacity: 0.18;
     }
     .editorial-media img,
     .studio-btn-primary,

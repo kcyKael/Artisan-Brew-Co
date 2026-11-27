@@ -3,12 +3,78 @@
 @endphp
 
 <x-landing-shell title="{{ config('pos.brand_name', 'Artisan Brew Co.') }} — Contemporary Coffee Studio">
-    <section id="hero" class="relative min-h-[100svh] pt-24 pb-16 lg:pt-20 lg:pb-0 flex items-center overflow-hidden bg-[rgb(22,20,18)]">
+    <x-slot:intro>
+        <div id="abc-intro-overlay"
+             class="hidden fixed inset-0 z-[60] bg-[rgb(22,20,18)] overflow-hidden select-none"
+             role="dialog"
+             aria-modal="true"
+             aria-label="Artisan Brew Co. opening sequence"
+             data-cup-src="{{ asset('images/hero-coffee-cup.webp') }}"
+             data-logo-src="{{ asset('images/abc-logo.png') }}"
+             data-bean-srcs="{{ implode('|', [asset('images/intro-bean-1.webp'), asset('images/intro-bean-2.webp'), asset('images/intro-bean-3.webp')]) }}">
+            <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-80"></div>
+            <div class="pointer-events-none absolute inset-0 studio-grain opacity-60"></div>
+
+            <button type="button"
+                    id="abc-intro-skip"
+                    class="fixed top-5 right-5 sm:top-7 sm:right-8 z-30 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium uppercase tracking-[0.16em] text-[#F4EEE5] bg-white/[0.06] border border-white/20 hover:border-[#D2B077] hover:text-[#D2B077] transition-colors cursor-pointer">
+                <span>Skip intro</span>
+                <span aria-hidden="true">&rarr;</span>
+            </button>
+
+            <div id="intro-beans-layer" class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                <img data-intro-bean data-depth="far" src="{{ asset('images/intro-bean-3.webp') }}" alt="" width="170" height="220" class="intro-bean intro-bean-blur-far w-10 sm:w-12 left-[14%]">
+                <img data-intro-bean data-depth="mid" src="{{ asset('images/intro-bean-1.webp') }}" alt="" width="169" height="220" class="intro-bean intro-bean-blur-mid w-14 sm:w-16 left-[31%]">
+                <img data-intro-bean data-depth="near" src="{{ asset('images/intro-bean-2.webp') }}" alt="" width="203" height="220" class="intro-bean w-16 sm:w-20 left-[49%]">
+                <img data-intro-bean data-depth="far" src="{{ asset('images/intro-bean-1.webp') }}" alt="" width="169" height="220" class="intro-bean intro-bean-blur-far w-11 sm:w-13 left-[66%]">
+                <img data-intro-bean data-depth="near" src="{{ asset('images/intro-bean-3.webp') }}" alt="" width="170" height="220" class="intro-bean w-14 sm:w-18 left-[78%]">
+                <img data-intro-bean data-depth="mid" src="{{ asset('images/intro-bean-2.webp') }}" alt="" width="203" height="220" class="intro-bean intro-bean-blur-mid w-12 sm:w-15 left-[41%]">
+            </div>
+
+            <div id="intro-reveal-layer" class="relative z-10 h-full w-full flex flex-col items-center justify-center px-6 text-center">
+                <div id="intro-cup-wrap" class="relative w-[min(78vw,430px)] sm:w-[min(64vw,470px)] aspect-[816/652] flex items-center justify-center opacity-0">
+                    <div id="intro-cup-halo" class="pointer-events-none absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(210,176,119,0.22)_0%,rgba(90,56,28,0.12)_42%,rgba(22,20,18,0)_72%)] blur-2xl"></div>
+                    <div id="intro-steam-layer" class="pointer-events-none absolute left-[24%] right-[32%] -top-[28%] h-[48%]" aria-hidden="true">
+                        <svg viewBox="0 0 180 220" fill="none" class="w-full h-full overflow-visible">
+                            <defs>
+                                <linearGradient id="introSteamGrad" x1="0" y1="1" x2="0" y2="0">
+                                    <stop offset="0%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                    <stop offset="32%" stop-color="#F4EEE5" stop-opacity="0.34"/>
+                                    <stop offset="72%" stop-color="#D2B077" stop-opacity="0.14"/>
+                                    <stop offset="100%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                            <path data-intro-steam d="M62 210 C42 155, 86 112, 60 56 C46 28, 62 12, 74 0" stroke="url(#introSteamGrad)" stroke-width="11" stroke-linecap="round" class="steam-ribbon"/>
+                            <path data-intro-steam d="M96 215 C118 160, 74 118, 102 62 C116 32, 96 14, 88 2" stroke="url(#introSteamGrad)" stroke-width="13" stroke-linecap="round" class="steam-ribbon"/>
+                            <path data-intro-steam d="M126 205 C106 154, 140 108, 114 54 C102 30, 112 16, 120 4" stroke="url(#introSteamGrad)" stroke-width="9" stroke-linecap="round" class="steam-ribbon"/>
+                        </svg>
+                    </div>
+                    <img id="intro-cup-visual"
+                         src="{{ asset('images/hero-coffee-cup.webp') }}"
+                         alt="Artisan Brew Co. dark ceramic coffee cup and matching saucer"
+                         width="816"
+                         height="652"
+                         class="relative z-10 w-full h-full object-contain drop-shadow-[0_28px_40px_rgba(0,0,0,0.72)]">
+                </div>
+
+                <div id="intro-brand-mark" class="mt-5 flex flex-col items-center gap-3 opacity-0">
+                    <img src="{{ asset('images/abc-logo.png') }}"
+                         alt="Artisan Brew Co."
+                         width="52"
+                         height="52"
+                         class="w-12 h-12 sm:w-14 sm:h-14 object-contain border-0 bg-transparent">
+                    <span class="text-[11px] uppercase tracking-[0.34em] text-[#D2B077]">Artisan Brew Co.</span>
+                </div>
+            </div>
+        </div>
+    </x-slot:intro>
+
+    <section id="hero" class="relative min-h-[100svh] pt-28 pb-16 lg:pt-24 lg:pb-12 flex items-center overflow-hidden bg-[rgb(22,20,18)]">
         <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow"></div>
         <div class="pointer-events-none absolute inset-0 studio-grain opacity-70"></div>
 
-        <div class="relative max-w-7xl mx-auto w-full px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 items-center gap-10 lg:gap-0">
-            <div class="lg:col-span-6 relative z-20 space-y-7 pt-4 lg:py-20">
+        <div class="relative max-w-7xl mx-auto w-full px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-10">
+            <div class="lg:col-span-6 relative z-20 space-y-7">
                 <div data-hero-reveal class="inline-flex items-center gap-3">
                     <span class="h-px w-8 bg-[#D2B077]/70"></span>
                     <span class="text-xs font-semibold uppercase tracking-[0.28em] text-[#D2B077]">Artisan Brew Co.</span>
@@ -44,18 +110,50 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-7 lg:-ml-16 relative z-10 flex items-center justify-center">
+            <div class="lg:col-span-6 relative z-10 flex items-center justify-center">
                 <div id="hero-cup-stage"
-                     data-logo-url="{{ asset('images/abc-logo.png') }}"
-                     class="relative w-full h-[360px] sm:h-[430px] lg:h-[680px]">
-                    <div id="hero-cup-canvas" class="absolute inset-0 opacity-0 transition-opacity duration-700"></div>
+                     class="relative w-full max-w-[360px] sm:max-w-[440px] lg:max-w-[560px] mx-auto pt-14 sm:pt-16 pb-8 px-2 sm:px-4">
+                    <div class="pointer-events-none absolute inset-x-8 top-10 bottom-6 rounded-full bg-[radial-gradient(circle,rgba(210,176,119,0.16)_0%,rgba(88,54,28,0.10)_42%,rgba(22,20,18,0)_74%)] blur-2xl"></div>
 
-                    <div id="hero-cup-fallback" class="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-700 select-none">
-                        <div class="relative flex flex-col items-center">
-                            <div class="hero-steam-wisp w-24 h-24 rounded-full bg-gradient-to-t from-[#F4EEE5]/5 via-[#F4EEE5]/15 to-transparent blur-xl -mb-6"></div>
-                            <div class="w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-gradient-to-b from-[#25201C] to-[rgb(22,20,18)] border border-[#D2B077]/25 shadow-[0_32px_60px_-20px_rgba(0,0,0,0.85)] flex flex-col items-center justify-center p-8 text-center">
-                                <img src="{{ asset('images/abc-logo.png') }}" alt="Artisan Brew Co. emblem" class="w-24 h-24 object-contain border-0 opacity-90">
-                                <span class="mt-3 text-[10px] uppercase tracking-[0.28em] text-[#D2B077]">Single-Origin Studio</span>
+                    <div id="hero-cup-entrance" class="relative aspect-[816/652] w-full">
+                        <div id="hero-cup-shadow"
+                             aria-hidden="true"
+                             class="hero-cup-shadow pointer-events-none absolute left-1/2 -translate-x-1/2 -bottom-[3%] w-[74%] h-[15%] rounded-full"></div>
+
+                        <div id="hero-cup-parallax" class="relative w-full h-full will-change-transform">
+                            <div id="hero-cup-steam"
+                                 aria-hidden="true"
+                                 class="pointer-events-none absolute left-[24%] right-[32%] -top-[34%] h-[52%] z-20 will-change-transform">
+                                <svg viewBox="0 0 220 240" fill="none" class="w-full h-full overflow-visible">
+                                    <defs>
+                                        <linearGradient id="heroSteamPrimary" x1="0" y1="1" x2="0" y2="0">
+                                            <stop offset="0%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                            <stop offset="28%" stop-color="#F4EEE5" stop-opacity="0.32"/>
+                                            <stop offset="68%" stop-color="#D2B077" stop-opacity="0.14"/>
+                                            <stop offset="100%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                        </linearGradient>
+                                        <linearGradient id="heroSteamSoft" x1="0" y1="1" x2="0" y2="0">
+                                            <stop offset="0%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                            <stop offset="35%" stop-color="#F4EEE5" stop-opacity="0.22"/>
+                                            <stop offset="100%" stop-color="#F4EEE5" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path data-hero-steam-wisp d="M64 232 C42 178, 88 128, 58 68 C44 40, 62 18, 76 4" stroke="url(#heroSteamPrimary)" stroke-width="11" stroke-linecap="round" class="steam-ribbon"/>
+                                    <path data-hero-steam-wisp d="M106 236 C132 178, 82 126, 114 66 C128 38, 108 18, 96 2" stroke="url(#heroSteamPrimary)" stroke-width="14" stroke-linecap="round" class="steam-ribbon"/>
+                                    <path data-hero-steam-wisp d="M144 226 C122 174, 160 124, 134 68 C122 44, 134 22, 142 8" stroke="url(#heroSteamSoft)" stroke-width="10" stroke-linecap="round" class="steam-ribbon"/>
+                                    <path data-hero-steam-wisp d="M84 228 C102 182, 66 138, 90 84 C102 58, 88 32, 82 14" stroke="url(#heroSteamSoft)" stroke-width="8" stroke-linecap="round" class="steam-ribbon"/>
+                                </svg>
+                            </div>
+
+                            <div id="hero-cup-float" class="relative z-10 w-full h-full will-change-transform">
+                                <img id="hero-cup-img"
+                                     src="{{ asset('images/hero-coffee-cup.webp') }}"
+                                     alt="Warm-black stoneware ceramic coffee cup filled with espresso latte art on a matching saucer"
+                                     width="816"
+                                     height="652"
+                                     fetchpriority="high"
+                                     decoding="async"
+                                     class="w-full h-full object-contain select-none">
                             </div>
                         </div>
                     </div>
