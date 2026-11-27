@@ -390,4 +390,332 @@ class CheckoutAndPricingTest extends TestCase
         ]);
         $this->assertSame('Less ice', $sale->fresh()->note);
     }
+
+    public function test_card_and_gcash_payments_require_no_cash_tender_and_record_reference(): void
+    {
+        $cashier = $this->makeCashier();
+        $latte = Product::create([
+            'name' => 'Latte',
+            'price' => '150.00',
+            'stock_quantity' => 10,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($cashier);
+
+        $cardRes = $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'card',
+            'payment_reference' => 'VISA-4242',
+            'items' => [
+                ['product_id' => $latte->id, 'quantity' => 2],
+            ],
+        ])->assertOk();
+
+        $cardRes->assertJsonPath('order.payment_method', 'card');
+        $cardRes->assertJsonPath('order.total_formatted', '₱300.00');
+        $cardOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('card', $cardOrder->payment_method);
+        $this->assertSame('VISA-4242', $cardOrder->payment_reference);
+        $this->assertSame('300.00', (string) $cardOrder->cash_received);
+        $this->assertSame('0.00', (string) $cardOrder->change_amount);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'gcash',
+            'payment_reference' => 'GC-998877',
+            'items' => [
+                ['product_id' => $latte->id, 'quantity' => 1],
+            ],
+        ])->assertOk();
+
+        $gcashOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('gcash', $gcashOrder->payment_method);
+        $this->assertSame('GC-998877', $gcashOrder->payment_reference);
+        $this->assertSame('150.00', (string) $gcashOrder->cash_received);
+        $this->assertSame('0.00', (string) $gcashOrder->change_amount);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'cash',
+            'payment_reference' => 'SHOULD-BE-NULL',
+            'cash_received' => '200.00',
+            'items' => [
+                ['product_id' => $latte->id, 'quantity' => 1],
+            ],
+        ])->assertOk();
+
+        $cashOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('cash', $cashOrder->payment_method);
+        $this->assertNull($cashOrder->payment_reference);
+        $this->assertSame('200.00', (string) $cashOrder->cash_received);
+        $this->assertSame('50.00', (string) $cashOrder->change_amount);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'cash',
+            'items' => [
+                ['product_id' => $latte->id, 'quantity' => 1],
+            ],
+        ])->assertStatus(422);
+    }
+
+    public function test_percent_fixed_and_gift_card_discounts_cap_at_subtotal_and_deduct_gift_card_balance(): void
+    {
+        $cashier = $this->makeCashier();
+        $espresso = Product::create([
+            'name' => 'Espresso',
+            'price' => '100.00',
+            'stock_quantity' => 20,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($cashier);
+
+        $pctRes = $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'card',
+            'discount_type' => 'percent',
+            'discount_value' => '25',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 2],
+            ],
+        ])->assertOk();
+
+        $pctRes->assertJsonPath('order.discount_label', '25% Off');
+        $pctOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('percent', $pctOrder->discount_type);
+        $this->assertSame('25% Off', $pctOrder->discount_label);
+        $this->assertSame('200.00', (string) $pctOrder->subtotal_amount);
+        $this->assertSame('50.00', (string) $pctOrder->discount_amount);
+        $this->assertSame('150.00', (string) $pctOrder->total_amount);
+        $this->assertSame('150.00', (string) $pctOrder->cash_received);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'cash',
+            'cash_received' => '0.00',
+            'discount_type' => 'fixed',
+            'discount_value' => '500.00',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 1],
+            ],
+        ])->assertOk();
+
+        $fixedOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('fixed', $fixedOrder->discount_type);
+        $this->assertSame('Fixed Discount', $fixedOrder->discount_label);
+        $this->assertSame('100.00', (string) $fixedOrder->subtotal_amount);
+        $this->assertSame('100.00', (string) $fixedOrder->discount_amount);
+        $this->assertSame('0.00', (string) $fixedOrder->total_amount);
+        $this->assertSame('0.00', (string) $fixedOrder->change_amount);
+
+        $card = GiftCard::create([
+            'code' => 'ABC-GC-300',
+            'initial_balance' => '300.00',
+            'remaining_balance' => '300.00',
+            'is_active' => true,
+            'expires_at' => null,
+        ]);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'cash',
+            'cash_received' => '0.00',
+            'discount_type' => 'giftcard',
+            'gift_card_code' => 'abc-gc-300',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 2],
+            ],
+        ])->assertOk();
+
+        $gcOrder1 = Order::latest('id')->firstOrFail();
+        $this->assertSame('giftcard', $gcOrder1->discount_type);
+        $this->assertSame('Gift Card ABC-GC-300', $gcOrder1->discount_label);
+        $this->assertSame('200.00', (string) $gcOrder1->discount_amount);
+        $this->assertSame('0.00', (string) $gcOrder1->total_amount);
+        $this->assertSame($card->id, $gcOrder1->gift_card_id);
+        $this->assertSame('100.00', (string) $card->fresh()->remaining_balance);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'cash',
+            'cash_received' => '150.00',
+            'discount_type' => 'giftcard',
+            'gift_card_code' => 'ABC-GC-300',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 2],
+            ],
+        ])->assertOk();
+
+        $gcOrder2 = Order::latest('id')->firstOrFail();
+        $this->assertSame('100.00', (string) $gcOrder2->discount_amount);
+        $this->assertSame('100.00', (string) $gcOrder2->total_amount);
+        $this->assertSame('50.00', (string) $gcOrder2->change_amount);
+        $this->assertSame('0.00', (string) $card->fresh()->remaining_balance);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'card',
+            'discount_type' => 'giftcard',
+            'gift_card_code' => 'ABC-GC-300',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 1],
+            ],
+        ])->assertStatus(422);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'payment_method' => 'card',
+            'discount_type' => 'giftcard',
+            'gift_card_code' => 'NON-EXISTENT',
+            'items' => [
+                ['product_id' => $espresso->id, 'quantity' => 1],
+            ],
+        ])->assertStatus(422);
+    }
+
+    public function test_walk_in_cup_name_order_type_and_line_notes_persist_on_order_and_sales(): void
+    {
+        $cashier = $this->makeCashier();
+        $customer = Customer::create([
+            'full_name' => 'Elena Cruz',
+            'email' => 'elena@example.ph',
+        ]);
+        $matcha = Product::create([
+            'name' => 'Matcha',
+            'price' => '160.00',
+            'stock_quantity' => 10,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($cashier);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'order_type' => 'take_out',
+            'cup_name' => 'Sam',
+            'order_note' => 'Extra napkins',
+            'cash_received' => '200.00',
+            'items' => [
+                ['product_id' => $matcha->id, 'quantity' => 1, 'note' => 'Oat milk, less sweet'],
+            ],
+        ])->assertOk();
+
+        $walkInOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('take_out', $walkInOrder->order_type);
+        $this->assertSame('Sam', $walkInOrder->cup_name);
+        $this->assertSame('Extra napkins', $walkInOrder->order_note);
+        $this->assertSame('Walk-in · Sam', $walkInOrder->customer_name_snapshot);
+        $this->assertSame('completed', $walkInOrder->status);
+        $this->assertSame('Oat milk, less sweet', $walkInOrder->sales()->firstOrFail()->note);
+
+        $this->postJson('/pos/checkout', [
+            'checkout_token' => Str::uuid()->toString(),
+            'customer_id' => $customer->id,
+            'cup_name' => 'IgnoredOnSnapshot',
+            'cash_received' => '200.00',
+            'items' => [
+                ['product_id' => $matcha->id, 'quantity' => 1],
+            ],
+        ])->assertOk();
+
+        $custOrder = Order::latest('id')->firstOrFail();
+        $this->assertSame('dine_in', $custOrder->order_type);
+        $this->assertSame('Elena Cruz', $custOrder->customer_name_snapshot);
+        $this->assertSame('IgnoredOnSnapshot', $custOrder->cup_name);
+
+        $recordRes = $this->post('/sales/record', [
+            'checkout_token' => Str::uuid()->toString(),
+            'product_id' => $matcha->id,
+            'quantity' => 1,
+            'order_type' => 'take_out',
+            'payment_method' => 'gcash',
+            'payment_reference' => 'GC-555',
+            'cup_name' => 'Mia',
+            'order_note' => 'No straw',
+            'discount_type' => 'percent',
+            'discount_value' => '10',
+            'note' => 'Half sweet',
+        ]);
+        $recordOrder = Order::latest('id')->firstOrFail();
+        $recordRes->assertRedirect(route('orders.receipt', $recordOrder));
+        $this->assertSame('take_out', $recordOrder->order_type);
+        $this->assertSame('gcash', $recordOrder->payment_method);
+        $this->assertSame('GC-555', $recordOrder->payment_reference);
+        $this->assertSame('Walk-in · Mia', $recordOrder->customer_name_snapshot);
+        $this->assertSame('No straw', $recordOrder->order_note);
+        $this->assertSame('16.00', (string) $recordOrder->discount_amount);
+        $this->assertSame('144.00', (string) $recordOrder->total_amount);
+        $this->assertSame('Half sweet', $recordOrder->sales()->firstOrFail()->note);
+    }
+
+    public function test_gift_card_lookup_endpoint_returns_validity_and_balance(): void
+    {
+        $cashier = $this->makeCashier();
+
+        GiftCard::create([
+            'code' => 'ABC-LOOK-250',
+            'initial_balance' => '250.00',
+            'remaining_balance' => '250.00',
+            'is_active' => true,
+            'expires_at' => null,
+        ]);
+        GiftCard::create([
+            'code' => 'ABC-LOOK-OFF',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '100.00',
+            'is_active' => false,
+            'expires_at' => null,
+        ]);
+        GiftCard::create([
+            'code' => 'ABC-LOOK-EXP',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '100.00',
+            'is_active' => true,
+            'expires_at' => now()->subDay(),
+        ]);
+        GiftCard::create([
+            'code' => 'ABC-LOOK-ZERO',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '0.00',
+            'is_active' => true,
+            'expires_at' => null,
+        ]);
+
+        $this->actingAs($cashier);
+
+        $this->getJson(route('pos.gift-cards.lookup', ['code' => 'abc-look-250']))
+            ->assertOk()
+            ->assertJson([
+                'valid' => true,
+                'code' => 'ABC-LOOK-250',
+                'remaining_balance' => '250.00',
+                'remaining_formatted' => '₱250.00',
+            ]);
+
+        $this->getJson(route('pos.gift-cards.lookup', ['code' => 'ABC-LOOK-OFF']))
+            ->assertOk()
+            ->assertJson(['valid' => false]);
+
+        $this->getJson(route('pos.gift-cards.lookup', ['code' => 'ABC-LOOK-EXP']))
+            ->assertOk()
+            ->assertJson(['valid' => false]);
+
+        $this->getJson(route('pos.gift-cards.lookup', ['code' => 'ABC-LOOK-ZERO']))
+            ->assertOk()
+            ->assertJson(['valid' => false]);
+
+        $this->getJson(route('pos.gift-cards.lookup', ['code' => 'NO-SUCH-CARD']))
+            ->assertOk()
+            ->assertJson([
+                'valid' => false,
+                'code' => 'NO-SUCH-CARD',
+                'remaining_balance' => '0.00',
+                'remaining_formatted' => '₱0.00',
+            ]);
+    }
 }

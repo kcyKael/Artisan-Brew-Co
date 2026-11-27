@@ -6,6 +6,7 @@ use App\Exceptions\CheckoutException;
 use App\Http\Requests\PosCheckoutRequest;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\GiftCard;
 use App\Models\Product;
 use App\Services\CheckoutService;
 use App\Support\BusinessTime;
@@ -76,13 +77,23 @@ class PosController extends Controller
 
     public function checkout(PosCheckoutRequest $request, CheckoutService $checkout): JsonResponse
     {
+        $validated = $request->validated();
+
         try {
             $result = $checkout->complete($request->user(), [
-                'checkout_token' => $request->validated('checkout_token'),
-                'customer_id' => $request->validated('customer_id'),
-                'cash_received' => $request->validated('cash_received'),
+                'checkout_token' => $validated['checkout_token'],
+                'customer_id' => $validated['customer_id'] ?? null,
+                'order_type' => $validated['order_type'] ?? 'dine_in',
+                'payment_method' => $validated['payment_method'] ?? 'cash',
+                'payment_reference' => $validated['payment_reference'] ?? null,
+                'cup_name' => $validated['cup_name'] ?? null,
+                'order_note' => $validated['order_note'] ?? null,
+                'discount_type' => $validated['discount_type'] ?? 'none',
+                'discount_value' => $validated['discount_value'] ?? null,
+                'gift_card_code' => $validated['gift_card_code'] ?? null,
+                'cash_received' => $validated['cash_received'] ?? null,
                 'source' => 'pos',
-                'items' => $request->validated('items'),
+                'items' => $validated['items'],
             ]);
         } catch (CheckoutException $e) {
             return response()->json([
@@ -110,6 +121,16 @@ class PosController extends Controller
                 'order_number' => $order->order_number,
                 'customer_name' => $order->customer_name_snapshot,
                 'staff_name' => $order->staff_name_snapshot,
+                'order_type' => $order->order_type,
+                'payment_method' => $order->payment_method,
+                'payment_reference' => $order->payment_reference,
+                'cup_name' => $order->cup_name,
+                'order_note' => $order->order_note,
+                'discount_type' => $order->discount_type,
+                'discount_label' => $order->discount_label,
+                'discount_amount' => (string) $order->discount_amount,
+                'discount_formatted' => Money::formatPhp((string) $order->discount_amount),
+                'subtotal_formatted' => Money::formatPhp((string) $order->subtotal_amount),
                 'created_at_manila' => BusinessTime::format($order->created_at),
                 'total_formatted' => Money::formatPhp((string) $order->total_amount),
                 'cash_formatted' => Money::formatPhp((string) $order->cash_received),
@@ -121,10 +142,26 @@ class PosController extends Controller
                     'variant_label' => $sale->variant_label_snapshot,
                     'addons' => $sale->saleAddons->pluck('addon_name_snapshot')->all(),
                     'quantity' => $sale->quantity,
+                    'note' => $sale->note,
                     'unit_price_formatted' => Money::formatPhp((string) $sale->unit_price),
                     'total_price_formatted' => Money::formatPhp((string) $sale->total_price),
                 ])->values()->all(),
             ],
+        ]);
+    }
+
+    public function lookupGiftCard(Request $request): JsonResponse
+    {
+        $code = strtoupper(trim((string) $request->query('code', '')));
+        $giftCard = $code !== '' ? GiftCard::query()->where('code', $code)->first() : null;
+        $valid = $giftCard !== null && $giftCard->isUsable();
+        $remaining = $giftCard !== null ? (string) $giftCard->remaining_balance : '0.00';
+
+        return response()->json([
+            'valid' => $valid,
+            'code' => $code,
+            'remaining_balance' => $remaining,
+            'remaining_formatted' => Money::formatPhp($remaining),
         ]);
     }
 

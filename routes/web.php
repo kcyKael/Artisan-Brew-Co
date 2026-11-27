@@ -37,6 +37,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
     Route::get('/pos/customers/search', [PosController::class, 'searchCustomers'])->name('pos.customers.search');
+    Route::get('/pos/gift-cards/lookup', [PosController::class, 'lookupGiftCard'])->name('pos.gift-cards.lookup');
 
     Route::get('/sales/record', [RecordSaleController::class, 'create'])->name('sales.record');
     Route::post('/sales/record', [RecordSaleController::class, 'store'])->name('sales.record.store');

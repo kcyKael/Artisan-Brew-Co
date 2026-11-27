@@ -61,7 +61,15 @@ class RecordSaleController extends Controller
             $result = $checkout->complete($request->user(), [
                 'checkout_token' => $validated['checkout_token'],
                 'customer_id' => $validated['customer_id'] ?? null,
-                'cash_received' => $validated['cash_received'],
+                'order_type' => $validated['order_type'] ?? 'dine_in',
+                'payment_method' => $validated['payment_method'] ?? 'cash',
+                'payment_reference' => $validated['payment_reference'] ?? null,
+                'cup_name' => $validated['cup_name'] ?? null,
+                'order_note' => $validated['order_note'] ?? null,
+                'discount_type' => $validated['discount_type'] ?? 'none',
+                'discount_value' => $validated['discount_value'] ?? null,
+                'gift_card_code' => $validated['gift_card_code'] ?? null,
+                'cash_received' => $validated['cash_received'] ?? null,
                 'source' => 'record_sale',
                 'items' => [
                     [
@@ -69,6 +77,7 @@ class RecordSaleController extends Controller
                         'product_variant_id' => $validated['product_variant_id'] ?? null,
                         'addon_ids' => $validated['addon_ids'] ?? [],
                         'quantity' => $validated['quantity'],
+                        'note' => $validated['note'] ?? null,
                     ],
                 ],
             ]);
@@ -76,6 +85,11 @@ class RecordSaleController extends Controller
             $errorField = match ($e->field) {
                 'cash_received' => 'cash_received',
                 'customer_id' => 'customer_id',
+                'order_type' => 'order_type',
+                'payment_method' => 'payment_method',
+                'discount_type' => 'discount_type',
+                'discount_value' => 'discount_value',
+                'gift_card_code' => 'gift_card_code',
                 default => 'quantity',
             };
 

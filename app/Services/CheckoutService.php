@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\CheckoutException;
 use App\Models\Addon;
 use App\Models\Customer;
+use App\Models\GiftCard;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -66,18 +67,97 @@ class CheckoutService
         $source = ($payload['source'] ?? 'pos') === 'record_sale' ? 'record_sale' : 'pos';
         $customerId = isset($payload['customer_id']) && $payload['customer_id'] !== '' ? (int) $payload['customer_id'] : null;
 
-        try {
-            $cashReceivedCentavos = Money::toCentavos((string) ($payload['cash_received'] ?? ''));
-        } catch (\InvalidArgumentException) {
-            throw new CheckoutException('Please enter a valid cash received amount.', 422, 'cash_received');
+        $rawOrderType = trim((string) ($payload['order_type'] ?? ''));
+        $orderType = $rawOrderType === '' ? 'dine_in' : $rawOrderType;
+        if (! in_array($orderType, ['dine_in', 'take_out'], true)) {
+            throw new CheckoutException('Invalid order type selected.', 422, 'order_type');
         }
 
-        if ($cashReceivedCentavos < 0 || $cashReceivedCentavos > Money::MAX_CENTAVOS) {
-            throw new CheckoutException('Cash received amount is out of range.', 422, 'cash_received');
+        $rawPaymentMethod = trim((string) ($payload['payment_method'] ?? ''));
+        $paymentMethod = $rawPaymentMethod === '' ? 'cash' : $rawPaymentMethod;
+        if (! in_array($paymentMethod, ['cash', 'card', 'gcash'], true)) {
+            throw new CheckoutException('Invalid payment method selected.', 422, 'payment_method');
+        }
+
+        $paymentReference = trim((string) ($payload['payment_reference'] ?? ''));
+        $paymentReference = $paymentReference !== '' ? mb_substr($paymentReference, 0, 60) : null;
+        if ($paymentMethod === 'cash') {
+            $paymentReference = null;
+        }
+
+        $cupName = trim((string) ($payload['cup_name'] ?? ''));
+        $cupName = $cupName !== '' ? mb_substr($cupName, 0, 60) : null;
+
+        $orderNote = trim((string) ($payload['order_note'] ?? ''));
+        $orderNote = $orderNote !== '' ? mb_substr($orderNote, 0, 200) : null;
+
+        $rawDiscountType = trim((string) ($payload['discount_type'] ?? ''));
+        $discountType = $rawDiscountType === '' ? 'none' : $rawDiscountType;
+        if (! in_array($discountType, ['none', 'percent', 'fixed', 'giftcard'], true)) {
+            throw new CheckoutException('Invalid discount type selected.', 422, 'discount_type');
+        }
+
+        $discountValueRaw = trim((string) ($payload['discount_value'] ?? ''));
+        $percentValue = 0.0;
+        $fixedCentavos = 0;
+
+        if ($discountType === 'percent') {
+            if ($discountValueRaw === '' || ! is_numeric($discountValueRaw)) {
+                throw new CheckoutException('Percentage discount must be between 1 and 100.', 422, 'discount_value');
+            }
+            $percentValue = (float) $discountValueRaw;
+            if ($percentValue <= 0 || $percentValue > 100) {
+                throw new CheckoutException('Percentage discount must be between 1 and 100.', 422, 'discount_value');
+            }
+        } elseif ($discountType === 'fixed') {
+            try {
+                $fixedCentavos = Money::toCentavos($discountValueRaw);
+            } catch (\InvalidArgumentException) {
+                throw new CheckoutException('Please enter a valid fixed discount amount.', 422, 'discount_value');
+            }
+            if ($fixedCentavos <= 0 || $fixedCentavos > Money::MAX_CENTAVOS) {
+                throw new CheckoutException('Fixed discount amount must be greater than zero.', 422, 'discount_value');
+            }
+        } else {
+            $discountValueRaw = '';
+        }
+
+        $giftCardCode = $discountType === 'giftcard'
+            ? strtoupper(trim((string) ($payload['gift_card_code'] ?? '')))
+            : '';
+
+        if ($discountType === 'giftcard' && $giftCardCode === '') {
+            throw new CheckoutException('Please enter a gift card code.', 422, 'gift_card_code');
+        }
+
+        $cashReceivedCentavos = null;
+        if ($paymentMethod === 'cash') {
+            try {
+                $cashReceivedCentavos = Money::toCentavos((string) ($payload['cash_received'] ?? ''));
+            } catch (\InvalidArgumentException) {
+                throw new CheckoutException('Please enter a valid cash received amount.', 422, 'cash_received');
+            }
+
+            if ($cashReceivedCentavos < 0 || $cashReceivedCentavos > Money::MAX_CENTAVOS) {
+                throw new CheckoutException('Cash received amount is out of range.', 422, 'cash_received');
+            }
         }
 
         $normalizedItems = $this->normalizeItems($rawItems);
-        $requestHash = $this->computeRequestHash($customerId, $normalizedItems, $cashReceivedCentavos, $source);
+        $requestHash = $this->computeRequestHash(
+            $customerId,
+            $normalizedItems,
+            $cashReceivedCentavos,
+            $source,
+            $orderType,
+            $paymentMethod,
+            $paymentReference,
+            $cupName,
+            $orderNote,
+            $discountType,
+            $discountValueRaw,
+            $giftCardCode
+        );
 
         try {
             return DB::transaction(function () use (
@@ -87,7 +167,16 @@ class CheckoutService
                 $customerId,
                 $normalizedItems,
                 $cashReceivedCentavos,
-                $source
+                $source,
+                $orderType,
+                $paymentMethod,
+                $paymentReference,
+                $cupName,
+                $orderNote,
+                $discountType,
+                $percentValue,
+                $fixedCentavos,
+                $giftCardCode
             ): CheckoutResult {
                 $freshStaff = User::query()->whereKey($staff->id)->first();
                 if (! $freshStaff || ! $freshStaff->isActiveAccount()) {
@@ -104,7 +193,7 @@ class CheckoutService
                     return $this->resolveExistingTokenOrder($existingOrder, $requestHash);
                 }
 
-                $customerNameSnapshot = 'Walk-in customer';
+                $customerNameSnapshot = $cupName !== null ? 'Walk-in · '.$cupName : 'Walk-in customer';
                 if ($customerId !== null) {
                     $customer = Customer::query()->whereKey($customerId)->first();
                     if (! $customer) {
@@ -131,7 +220,7 @@ class CheckoutService
                 $requestedByProduct = [];
                 $firstLineByProduct = [];
                 $preparedLines = [];
-                $orderTotalCentavos = 0;
+                $subtotalCentavos = 0;
 
                 foreach ($normalizedItems as $line) {
                     $lineIndex = $line['original_index'];
@@ -207,9 +296,9 @@ class CheckoutService
                     }
 
                     $pricing = $this->priceLine($product, $selectedVariant, $selectedAddons, $quantity);
-                    $orderTotalCentavos += $pricing['line_total_centavos'];
+                    $subtotalCentavos += $pricing['line_total_centavos'];
 
-                    if ($orderTotalCentavos > Money::MAX_CENTAVOS) {
+                    if ($subtotalCentavos > Money::MAX_CENTAVOS) {
                         throw new CheckoutException('Order total exceeds the supported transaction limit.', 422, 'items', $lineIndex, $productId);
                     }
 
@@ -218,6 +307,7 @@ class CheckoutService
                         'variant' => $selectedVariant,
                         'addons' => $selectedAddons,
                         'quantity' => $quantity,
+                        'note' => $line['note'],
                         'pricing' => $pricing,
                     ];
                 }
@@ -235,16 +325,57 @@ class CheckoutService
                     }
                 }
 
-                if ($cashReceivedCentavos < $orderTotalCentavos) {
-                    $shortCentavos = $orderTotalCentavos - $cashReceivedCentavos;
-                    throw new CheckoutException(
-                        'Insufficient cash received. Short by '.Money::formatCentavos($shortCentavos).'.',
-                        422,
-                        'cash_received'
+                $discountCentavos = 0;
+                $discountLabel = null;
+                $giftCard = null;
+
+                if ($discountType === 'percent') {
+                    $discountCentavos = min(
+                        $subtotalCentavos,
+                        intdiv($subtotalCentavos * (int) round($percentValue * 100), 10000)
                     );
+                    $discountLabel = rtrim(rtrim(number_format($percentValue, 2, '.', ''), '0'), '.').'% Off';
+                } elseif ($discountType === 'fixed') {
+                    $discountCentavos = min($subtotalCentavos, $fixedCentavos);
+                    $discountLabel = 'Fixed Discount';
+                } elseif ($discountType === 'giftcard') {
+                    $giftCard = GiftCard::query()
+                        ->where('code', $giftCardCode)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $giftCard || ! $giftCard->isUsable()) {
+                        throw new CheckoutException(
+                            'Gift card is invalid, inactive, expired, or has zero balance.',
+                            422,
+                            'gift_card_code'
+                        );
+                    }
+
+                    $remainingCentavos = Money::toCentavos((string) $giftCard->remaining_balance);
+                    $discountCentavos = min($subtotalCentavos, $remainingCentavos);
+                    $giftCard->remaining_balance = Money::fromCentavos($remainingCentavos - $discountCentavos);
+                    $giftCard->save();
+                    $discountLabel = 'Gift Card '.$giftCard->code;
                 }
 
-                $changeCentavos = $cashReceivedCentavos - $orderTotalCentavos;
+                $totalCentavos = max(0, $subtotalCentavos - $discountCentavos);
+
+                if ($paymentMethod === 'cash') {
+                    if ($cashReceivedCentavos < $totalCentavos) {
+                        $shortCentavos = $totalCentavos - $cashReceivedCentavos;
+                        throw new CheckoutException(
+                            'Insufficient cash received. Short by '.Money::formatCentavos($shortCentavos).'.',
+                            422,
+                            'cash_received'
+                        );
+                    }
+                    $changeCentavos = $cashReceivedCentavos - $totalCentavos;
+                } else {
+                    $cashReceivedCentavos = $totalCentavos;
+                    $changeCentavos = 0;
+                }
+
                 $now = CarbonImmutable::now('UTC');
 
                 $order = new Order();
@@ -254,10 +385,20 @@ class CheckoutService
                 $order->customer_name_snapshot = $customerNameSnapshot;
                 $order->staff_name_snapshot = $freshStaff->full_name;
                 $order->source = $source;
-                $order->subtotal_amount = Money::fromCentavos($orderTotalCentavos);
-                $order->total_amount = Money::fromCentavos($orderTotalCentavos);
+                $order->order_type = $orderType;
+                $order->payment_method = $paymentMethod;
+                $order->payment_reference = $paymentReference;
+                $order->cup_name = $cupName;
+                $order->order_note = $orderNote;
+                $order->subtotal_amount = Money::fromCentavos($subtotalCentavos);
+                $order->discount_type = $discountType;
+                $order->discount_label = $discountLabel;
+                $order->discount_amount = Money::fromCentavos($discountCentavos);
+                $order->gift_card_id = $giftCard?->id;
+                $order->total_amount = Money::fromCentavos($totalCentavos);
                 $order->cash_received = Money::fromCentavos($cashReceivedCentavos);
                 $order->change_amount = Money::fromCentavos($changeCentavos);
+                $order->status = 'completed';
                 $order->checkout_token = $checkoutToken;
                 $order->request_hash = $requestHash;
                 $order->created_at = $now;
@@ -288,6 +429,7 @@ class CheckoutService
                     $sale->unit_price = Money::fromCentavos($pricing['unit_price_centavos']);
                     $sale->quantity = $prepared['quantity'];
                     $sale->total_price = Money::fromCentavos($pricing['line_total_centavos']);
+                    $sale->note = $prepared['note'];
                     $sale->created_at = $now;
                     $sale->updated_at = $now;
                     $sale->save();
@@ -400,36 +542,61 @@ class CheckoutService
 
             sort($addonIds);
 
+            $rawNote = trim((string) ($item['note'] ?? ''));
+            $note = $rawNote !== '' ? mb_substr($rawNote, 0, 120) : null;
+
             $normalized[] = [
                 'original_index' => $index,
                 'product_id' => $productId,
                 'product_variant_id' => $variantId,
                 'addon_ids' => $addonIds,
                 'quantity' => $quantity,
+                'note' => $note,
             ];
         }
 
         return $normalized;
     }
 
-    private function computeRequestHash(?int $customerId, array $normalizedItems, int $cashReceivedCentavos, string $source): string
-    {
+    private function computeRequestHash(
+        ?int $customerId,
+        array $normalizedItems,
+        ?int $cashReceivedCentavos,
+        string $source,
+        string $orderType,
+        string $paymentMethod,
+        ?string $paymentReference,
+        ?string $cupName,
+        ?string $orderNote,
+        string $discountType,
+        string $discountValueRaw,
+        string $giftCardCode
+    ): string {
         $canonicalItems = array_map(fn (array $item) => [
             'product_id' => $item['product_id'],
             'product_variant_id' => $item['product_variant_id'],
             'addon_ids' => $item['addon_ids'],
             'quantity' => $item['quantity'],
+            'note' => $item['note'],
         ], $normalizedItems);
 
         usort($canonicalItems, static function (array $a, array $b): int {
-            return [$a['product_id'], $a['product_variant_id'] ?? 0, implode(',', $a['addon_ids']), $a['quantity']]
-                <=> [$b['product_id'], $b['product_variant_id'] ?? 0, implode(',', $b['addon_ids']), $b['quantity']];
+            return [$a['product_id'], $a['product_variant_id'] ?? 0, implode(',', $a['addon_ids']), $a['quantity'], $a['note'] ?? '']
+                <=> [$b['product_id'], $b['product_variant_id'] ?? 0, implode(',', $b['addon_ids']), $b['quantity'], $b['note'] ?? ''];
         });
 
         $payload = json_encode([
             'customer_id' => $customerId,
             'cash_received_centavos' => $cashReceivedCentavos,
             'source' => $source,
+            'order_type' => $orderType,
+            'payment_method' => $paymentMethod,
+            'payment_reference' => $paymentReference,
+            'cup_name' => $cupName,
+            'order_note' => $orderNote,
+            'discount_type' => $discountType,
+            'discount_value' => $discountValueRaw,
+            'gift_card_code' => $giftCardCode,
             'items' => $canonicalItems,
         ], JSON_THROW_ON_ERROR);
 
