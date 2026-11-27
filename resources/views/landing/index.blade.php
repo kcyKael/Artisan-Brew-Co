@@ -12,12 +12,12 @@
              data-cup-src="{{ asset('images/hero-coffee-cup.webp') }}"
              data-logo-src="{{ asset('images/abc-logo.png') }}"
              data-bean-srcs="{{ implode('|', [asset('images/intro-bean-1.webp'), asset('images/intro-bean-2.webp'), asset('images/intro-bean-3.webp')]) }}">
-            <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-80"></div>
-            <div class="pointer-events-none absolute inset-0 studio-grain opacity-60"></div>
+            <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-85"></div>
+            <div class="pointer-events-none absolute inset-0 studio-grain"></div>
 
             <button type="button"
                     id="abc-intro-skip"
-                    class="fixed top-5 right-5 sm:top-7 sm:right-8 z-30 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium uppercase tracking-[0.16em] text-[#F4EEE5] bg-white/[0.06] border border-white/20 hover:border-[#D2B077] hover:text-[#D2B077] transition-colors cursor-pointer">
+                    class="fixed top-4 right-4 sm:top-7 sm:right-8 z-30 whitespace-nowrap inline-flex items-center gap-2 px-3.5 py-2 sm:px-4 rounded-full text-[11px] sm:text-xs font-medium uppercase tracking-[0.16em] text-[#F4EEE5] bg-white/[0.06] border border-white/20 hover:border-[#D2B077] hover:text-[#D2B077] transition-colors cursor-pointer">
                 <span>Skip intro</span>
                 <span aria-hidden="true">&rarr;</span>
             </button>
@@ -69,11 +69,16 @@
         </div>
     </x-slot:intro>
 
-    <section id="hero" class="relative min-h-[100svh] pt-28 pb-16 lg:pt-24 lg:pb-12 flex items-center overflow-hidden bg-[rgb(22,20,18)]">
-        <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow"></div>
-        <div class="pointer-events-none absolute inset-0 studio-grain opacity-70"></div>
+    <section id="hero" class="relative min-h-[100svh] pt-28 pb-16 lg:pt-24 lg:pb-12 flex items-center overflow-hidden studio-hero-backdrop">
+        <div class="studio-hero-light" aria-hidden="true"></div>
+        <div class="studio-window-gobo" aria-hidden="true">
+            <div class="studio-window-gobo-panes"></div>
+        </div>
+        <div class="studio-stone-surface" aria-hidden="true"></div>
+        <div class="studio-left-calm" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
 
-        <div class="relative max-w-7xl mx-auto w-full px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-10">
+        <div class="relative z-10 max-w-7xl mx-auto w-full px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-10">
             <div class="lg:col-span-6 relative z-20 space-y-7">
                 <div data-hero-reveal class="inline-flex items-center gap-3">
                     <span class="h-px w-8 bg-[#D2B077]/70"></span>
@@ -112,13 +117,14 @@
 
             <div class="lg:col-span-6 relative z-10 flex items-center justify-center">
                 <div id="hero-cup-stage"
-                     class="relative w-full max-w-[360px] sm:max-w-[440px] lg:max-w-[560px] mx-auto pt-14 sm:pt-16 pb-8 px-2 sm:px-4">
-                    <div class="pointer-events-none absolute inset-x-8 top-10 bottom-6 rounded-full bg-[radial-gradient(circle,rgba(210,176,119,0.16)_0%,rgba(88,54,28,0.10)_42%,rgba(22,20,18,0)_74%)] blur-2xl"></div>
-
+                     class="relative w-full max-w-[360px] sm:max-w-[440px] lg:max-w-[560px] mx-auto pt-14 sm:pt-16 pb-10 px-2 sm:px-4">
                     <div id="hero-cup-entrance" class="relative aspect-[816/652] w-full">
                         <div id="hero-cup-shadow"
                              aria-hidden="true"
-                             class="hero-cup-shadow pointer-events-none absolute left-1/2 -translate-x-1/2 -bottom-[3%] w-[74%] h-[15%] rounded-full"></div>
+                             class="hero-cup-shadow pointer-events-none absolute left-[46%] -translate-x-1/2 -bottom-[5%] w-[82%] h-[18%] rounded-full"></div>
+                        <div id="hero-cup-contact-shadow"
+                             aria-hidden="true"
+                             class="hero-cup-contact-shadow pointer-events-none absolute left-[48%] -translate-x-1/2 bottom-[0.5%] w-[56%] h-[9%] rounded-full"></div>
 
                         <div id="hero-cup-parallax" class="relative w-full h-full will-change-transform">
                             <div id="hero-cup-steam"
@@ -162,8 +168,9 @@
         </div>
     </section>
 
-    <section id="signature-brews" class="studio-anchor relative py-24 sm:py-32 border-t border-white/10 bg-[#1A1816]">
-        <div class="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-16">
+    <section id="signature-brews" class="studio-anchor studio-section-divider studio-section-brews relative py-24 sm:py-32 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-16">
             <div data-reveal class="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div class="space-y-4 max-w-2xl">
                     <span class="text-xs font-semibold uppercase tracking-[0.26em] text-[#D2B077]">Signature Brews</span>
@@ -221,8 +228,9 @@
         </div>
     </section>
 
-    <section id="the-craft" class="studio-anchor relative py-24 sm:py-32 border-t border-white/10 bg-[rgb(22,20,18)] overflow-hidden">
-        <div class="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+    <section id="the-craft" class="studio-anchor studio-section-divider studio-section-craft relative py-24 sm:py-32 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             <div data-reveal class="lg:col-span-6 space-y-8">
                 <div class="space-y-4">
                     <span class="text-xs font-semibold uppercase tracking-[0.26em] text-[#D2B077]">The Craft</span>
@@ -271,8 +279,9 @@
         </div>
     </section>
 
-    <section id="atmosphere" class="studio-anchor relative py-24 sm:py-32 border-t border-white/10 bg-[#1E1A16]/55">
-        <div class="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-14">
+    <section id="atmosphere" class="studio-anchor studio-section-divider studio-section-atmosphere relative py-24 sm:py-32 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-14">
             <div data-reveal class="max-w-2xl space-y-4">
                 <span class="text-xs font-semibold uppercase tracking-[0.26em] text-[#D2B077]">A Moment at ABC</span>
                 <h2 class="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.04] text-[#F4EEE5]">
@@ -315,9 +324,9 @@
         </div>
     </section>
 
-    <section id="visit" class="studio-anchor relative py-28 sm:py-36 border-t border-white/10 bg-[rgb(22,20,18)] overflow-hidden">
-        <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-75"></div>
-        <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center space-y-8" data-reveal>
+    <section id="visit" class="studio-anchor studio-section-divider studio-section-visit relative py-28 sm:py-36 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-4xl mx-auto px-5 sm:px-8 text-center space-y-8" data-reveal>
             <span class="inline-block text-xs font-semibold uppercase tracking-[0.28em] text-[#D2B077]">Artisan Brew Co.</span>
             <h2 class="font-display text-5xl sm:text-6xl lg:text-7xl font-semibold leading-[0.98] text-[#F4EEE5]">
                 Your next favorite cup awaits.

@@ -3,9 +3,10 @@
 @endphp
 
 <x-landing-shell title="Menu — {{ config('pos.brand_name', 'Artisan Brew Co.') }}">
-    <section class="relative pt-32 pb-16 border-b border-white/10 bg-[rgb(22,20,18)]">
-        <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-70"></div>
-        <div class="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-8">
+    <section class="relative pt-32 pb-16 overflow-hidden studio-hero-backdrop">
+        <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-85" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-8">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-4 max-w-2xl">
                     <a href="{{ route('home') }}" class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-[#BFB4A5] hover:text-[#D2B077] transition-colors">
@@ -33,8 +34,9 @@
         </div>
     </section>
 
-    <section class="py-16 sm:py-24 bg-[#1A1816] space-y-20">
-        <div class="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-20">
+    <section class="studio-section-divider studio-section-brews relative py-16 sm:py-24 space-y-20 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 space-y-20">
             @forelse($categories as $category)
                 <div id="cat-{{ $category->id }}" class="studio-anchor space-y-8">
                     <div class="flex items-baseline justify-between gap-4 border-b border-white/10 pb-4">

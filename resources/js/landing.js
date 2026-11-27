@@ -115,6 +115,7 @@ const initLanding = () => {
     const cupFloat = document.getElementById('hero-cup-float');
     const cupParallax = document.getElementById('hero-cup-parallax');
     const cupShadow = document.getElementById('hero-cup-shadow');
+    const cupContactShadow = document.getElementById('hero-cup-contact-shadow');
     const cupSteam = document.getElementById('hero-cup-steam');
     const steamWisps = document.querySelectorAll('[data-hero-steam-wisp]');
 
@@ -124,6 +125,8 @@ const initLanding = () => {
         if (reducedMotion || heroIdleTweens.length > 0) {
             return;
         }
+
+        document.body.classList.add('studio-bg-active');
 
         if (cupFloat) {
             heroIdleTweens.push(
@@ -142,7 +145,21 @@ const initLanding = () => {
                 gsap.to(cupShadow, {
                     scaleX: 0.91,
                     scaleY: 0.90,
-                    opacity: 0.45,
+                    opacity: 0.48,
+                    duration: 3.4,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut',
+                })
+            );
+        }
+
+        if (cupContactShadow) {
+            heroIdleTweens.push(
+                gsap.to(cupContactShadow, {
+                    scaleX: 0.86,
+                    scaleY: 0.84,
+                    opacity: 0.42,
                     duration: 3.4,
                     repeat: -1,
                     yoyo: true,
@@ -227,6 +244,7 @@ const initLanding = () => {
         const steamX = cupSteam ? gsap.quickTo(cupSteam, 'x', { duration: 0.85, ease: 'power3.out' }) : null;
         const steamY = cupSteam ? gsap.quickTo(cupSteam, 'y', { duration: 0.85, ease: 'power3.out' }) : null;
         const shadowX = cupShadow ? gsap.quickTo(cupShadow, 'x', { duration: 0.75, ease: 'power3.out' }) : null;
+        const contactShadowX = cupContactShadow ? gsap.quickTo(cupContactShadow, 'x', { duration: 0.72, ease: 'power3.out' }) : null;
 
         cupStage.addEventListener(
             'pointermove',
@@ -242,6 +260,7 @@ const initLanding = () => {
                 steamX?.(nx * 12);
                 steamY?.(ny * 4);
                 shadowX?.(-nx * 5);
+                contactShadowX?.(-nx * 3);
             },
             { passive: true }
         );
@@ -254,6 +273,7 @@ const initLanding = () => {
                 steamX?.(0);
                 steamY?.(0);
                 shadowX?.(0);
+                contactShadowX?.(0);
             },
             { passive: true }
         );
