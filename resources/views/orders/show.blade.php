@@ -110,6 +110,35 @@
             </div>
         </div>
 
+        @if($order->status === 'completed')
+            <form method="POST" action="{{ route('orders.email-receipt', $order) }}" class="abc-panel p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                @csrf
+                <div class="md:col-span-5 space-y-1.5">
+                    <label for="order-show-receipt-email" class="block text-xs font-semibold uppercase tracking-wider text-[#D2B077]">Email Digital Receipt</label>
+                    <input id="order-show-receipt-email" name="receipt_email" type="email" required value="{{ old('receipt_email', $order->customer?->email) }}" class="abc-input text-sm py-2" placeholder="customer@example.ph">
+                    @error('receipt_email')
+                        <p class="text-xs text-[#E07A7A]">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="md:col-span-5 space-y-1.5">
+                    <label class="flex items-start gap-2 text-xs text-[#F4EEE5] cursor-pointer">
+                        <input type="checkbox" name="confirm_address" value="1" required class="mt-0.5 accent-[#D2B077]">
+                        <span>Confirm recipient email address</span>
+                    </label>
+                    @error('confirm_address')
+                        <p class="text-xs text-[#E07A7A]">{{ $message }}</p>
+                    @enderror
+                    <label class="flex items-start gap-2 text-xs text-[#BFB4A5] cursor-pointer">
+                        <input type="checkbox" name="marketing_opt_in" value="1" class="mt-0.5 accent-[#D2B077]">
+                        <span>Customer opted in to seasonal drink updates</span>
+                    </label>
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="abc-btn-primary w-full py-2 text-xs">Send Receipt</button>
+                </div>
+            </form>
+        @endif
+
         <div class="abc-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-white/10">
                 <h2 class="font-display text-2xl font-semibold text-[#F4EEE5]">Line Items (Historical Snapshot)</h2>

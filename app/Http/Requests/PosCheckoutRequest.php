@@ -33,6 +33,8 @@ class PosCheckoutRequest extends FormRequest
                 'max:99999999.99',
                 'regex:/^\d+(?:\.\d{1,2})?$/',
             ],
+            'receipt_email' => ['nullable', 'string', 'email', 'max:191'],
+            'marketing_opt_in' => ['nullable', 'boolean'],
             'items' => ['required', 'array', 'min:1', 'max:100'],
             'items.*.product_id' => ['required', 'integer', 'min:1'],
             'items.*.product_variant_id' => ['nullable', 'integer', 'min:1'],

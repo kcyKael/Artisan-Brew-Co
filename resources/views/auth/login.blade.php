@@ -51,10 +51,15 @@
                     <input id="password" name="password" type="password" required autocomplete="current-password" class="abc-input" placeholder="Enter your password">
                 </div>
 
-                <label class="inline-flex items-center gap-2 text-sm text-[#BFB4A5] cursor-pointer">
-                    <input type="checkbox" name="remember" value="1" class="accent-[#D2B077]">
-                    <span>Keep me signed in on this terminal</span>
-                </label>
+                <div class="flex items-center justify-between gap-3">
+                    <label class="inline-flex items-center gap-2 text-sm text-[#BFB4A5] cursor-pointer">
+                        <input type="checkbox" name="remember" value="1" class="accent-[#D2B077]">
+                        <span>Keep me signed in on this terminal</span>
+                    </label>
+                    <a href="{{ route('password.request') }}" class="text-xs text-[#D2B077] hover:underline underline-offset-4">
+                        Forgot password?
+                    </a>
+                </div>
 
                 <button type="submit" class="abc-btn-primary w-full py-2.5 text-sm">
                     Sign In to Counter

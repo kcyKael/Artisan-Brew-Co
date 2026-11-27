@@ -12,6 +12,7 @@ use App\Models\ProductVariant;
 use App\Models\Sale;
 use App\Models\SaleAddon;
 use App\Models\User;
+use App\Services\Email\StockAlertService;
 use App\Support\BusinessTime;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -160,7 +161,7 @@ class CheckoutService
         );
 
         try {
-            return DB::transaction(function () use (
+            $result = DB::transaction(function () use (
                 $staff,
                 $checkoutToken,
                 $requestHash,
@@ -489,6 +490,15 @@ class CheckoutService
 
             throw $e;
         }
+
+        if (! $result->wasReplay) {
+            app(StockAlertService::class)->evaluateProducts(
+                $result->order->sales->pluck('product_id')->filter()->unique()->all(),
+                $staff
+            );
+        }
+
+        return $result;
     }
 
     private function normalizeItems(array $rawItems): array

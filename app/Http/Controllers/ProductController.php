@@ -7,6 +7,7 @@ use App\Http\Requests\StockAdjustmentRequest;
 use App\Models\Addon;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\Email\StockAlertService;
 use App\Services\ImagePreparationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -181,6 +182,8 @@ class ProductController extends Controller
             $images->deletePreparedImage($oldImage);
         }
 
+        app(StockAlertService::class)->evaluateProducts([$product->id], $request->user());
+
         return redirect()
             ->route('products.edit', $product)
             ->with('status', "Product '{$data['name']}' updated.");
@@ -215,6 +218,8 @@ class ProductController extends Controller
         if ($result === 'negative') {
             return back()->withErrors(['delta' => 'Stock adjustment would cause negative inventory.']);
         }
+
+        app(StockAlertService::class)->evaluateProducts([$product->id], $request->user());
 
         return back()->with('status', 'Stock updated.');
     }

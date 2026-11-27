@@ -16,6 +16,23 @@
                 <input id="full_name" name="full_name" type="text" required value="{{ old('full_name', $user->full_name) }}" class="abc-input">
             </div>
 
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <label for="email" class="block text-sm font-medium text-[#F4EEE5]">Staff Email Address</label>
+                    @if(filled($user->email))
+                        <x-status-badge :tone="$user->email_verified_at ? 'success' : 'accent'">
+                            {{ $user->email_verified_at ? 'Verified' : 'Unverified' }}
+                        </x-status-badge>
+                    @endif
+                </div>
+                <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" class="abc-input" placeholder="you@artisanbrewco.ph">
+                @if(filled($user->pending_email))
+                    <p class="text-xs text-[#D2B077]">
+                        Pending verification: {{ $user->pending_email }}. Check that inbox for the verification link to complete the address change.
+                    </p>
+                @endif
+            </div>
+
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                 @if($user->avatarUrl())
                     <img src="{{ $user->avatarUrl() }}" alt="{{ $user->full_name }}" class="w-16 h-16 rounded-full object-cover border border-[#D2B077]/40">

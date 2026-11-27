@@ -98,6 +98,18 @@ use App\Support\Money;
                        value="{{ old('order_note') }}" class="abc-input" placeholder="Order note (optional)">
             </div>
 
+            <div class="abc-surface p-4 space-y-2.5 border border-white/10">
+                <div class="space-y-1.5">
+                    <label for="rs-receipt-email" class="block text-sm font-medium text-[#F4EEE5]">Digital Receipt Email (Optional)</label>
+                    <input id="rs-receipt-email" name="receipt_email" type="email" maxlength="191"
+                           value="{{ old('receipt_email') }}" class="abc-input" placeholder="customer@example.ph">
+                </div>
+                <label class="inline-flex items-center gap-2 text-xs text-[#BFB4A5] cursor-pointer">
+                    <input type="checkbox" name="marketing_opt_in" value="1" @checked(old('marketing_opt_in')) class="accent-[#D2B077]">
+                    <span>Customer explicitly asks for seasonal news &amp; promos (sends confirmation link)</span>
+                </label>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label for="rs-quantity" class="block text-sm font-medium text-[#F4EEE5]">Quantity</label>

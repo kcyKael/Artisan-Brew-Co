@@ -37,6 +37,7 @@
                 <a href="{{ route('home') }}#signature-brews" class="hover:text-[#F4EEE5] transition-colors">Signature Brews</a>
                 <a href="{{ route('home') }}#the-craft" class="hover:text-[#F4EEE5] transition-colors">The Craft</a>
                 <a href="{{ route('home') }}#atmosphere" class="hover:text-[#F4EEE5] transition-colors">Atmosphere</a>
+                <a href="{{ route('home') }}#contact" class="hover:text-[#F4EEE5] transition-colors">Contact</a>
             </nav>
 
             <div class="hidden md:flex items-center gap-4">
@@ -85,6 +86,7 @@
                     <a href="{{ route('home') }}#signature-brews" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">Signature Brews</a>
                     <a href="{{ route('home') }}#the-craft" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">The Craft</a>
                     <a href="{{ route('home') }}#atmosphere" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">Atmosphere</a>
+                    <a href="{{ route('home') }}#contact" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">Contact</a>
                     <a href="{{ route('menu.public') }}" class="py-2 border-b border-white/10 text-[#D2B077]">Full Menu</a>
                 </nav>
             </div>

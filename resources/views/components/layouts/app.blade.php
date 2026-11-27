@@ -39,6 +39,7 @@ $authUser = auth()->user();
             'items' => array_values(array_filter([
                 $isAdmin ? ['route' => 'staff.index', 'pattern' => 'staff*', 'label' => 'Staff', 'icon' => 'badge', 'badge' => null] : null,
                 $isAdmin ? ['route' => 'menu-config.index', 'pattern' => 'menu-config*', 'label' => 'Menu Configuration', 'icon' => 'sliders', 'badge' => null] : null,
+                $isAdmin ? ['route' => 'admin.email.settings', 'pattern' => 'admin/email*', 'label' => 'Email Center', 'icon' => 'mail', 'badge' => null] : null,
                 ['route' => 'profile.edit', 'pattern' => 'profile*', 'label' => 'Profile', 'icon' => 'user', 'badge' => null],
             ])),
         ],

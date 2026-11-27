@@ -125,6 +125,32 @@
                         <span>Print Receipt</span>
                     </button>
                 </div>
+
+                @if($order->status === 'completed')
+                    <form method="POST" action="{{ route('orders.email-receipt', $order) }}" class="abc-surface p-4 space-y-3 border border-white/10">
+                        @csrf
+                        <div class="text-xs font-semibold uppercase tracking-[0.14em] text-[#D2B077]">Email Digital Receipt</div>
+                        <div class="space-y-1.5">
+                            <label for="receipt-email-input" class="block text-xs font-medium text-[#BFB4A5]">Customer Email</label>
+                            <input id="receipt-email-input" name="receipt_email" type="email" required value="{{ old('receipt_email', $order->customer?->email) }}" class="abc-input text-sm py-2" placeholder="customer@example.ph">
+                            @error('receipt_email')
+                                <p class="text-xs text-[#E07A7A]">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <label class="flex items-start gap-2 text-xs text-[#F4EEE5] cursor-pointer">
+                            <input type="checkbox" name="confirm_address" value="1" required class="mt-0.5 accent-[#D2B077]">
+                            <span>Customer confirmed this email address for their receipt</span>
+                        </label>
+                        @error('confirm_address')
+                            <p class="text-xs text-[#E07A7A]">{{ $message }}</p>
+                        @enderror
+                        <label class="flex items-start gap-2 text-xs text-[#BFB4A5] cursor-pointer">
+                            <input type="checkbox" name="marketing_opt_in" value="1" class="mt-0.5 accent-[#D2B077]">
+                            <span>Also send news &amp; seasonal drink offers (double opt-in confirmation)</span>
+                        </label>
+                        <button type="submit" class="abc-btn-primary w-full py-2 text-xs">Send Receipt Email</button>
+                    </form>
+                @endif
             </section>
 
             <section class="lg:col-span-6 flex justify-center">

@@ -334,6 +334,115 @@
         </div>
     </section>
 
+    <section id="studio-connect" class="studio-anchor studio-section-divider relative py-24 sm:py-32 bg-[rgb(22,20,18)] overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
+        <div class="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+            <div id="contact" class="lg:col-span-7 abc-panel p-6 sm:p-8 space-y-5" data-reveal>
+                <div class="space-y-2">
+                    <span class="inline-block text-xs font-semibold uppercase tracking-[0.26em] text-[#D2B077]">Studio Concierge</span>
+                    <h2 class="font-display text-3xl sm:text-4xl font-semibold text-[#F4EEE5]">Write to Artisan Brew Co.</h2>
+                    <p class="text-sm text-[#BFB4A5] leading-relaxed">
+                        Private tastings, bean wholesale, custom pastry orders, or feedback from the bar. We reply directly to your inbox.
+                    </p>
+                </div>
+
+                @if(session('contact_status'))
+                    <div class="rounded-lg border border-[#9CAF94]/40 bg-[#9CAF94]/12 px-4 py-3 text-sm text-[#D7E4D1]" role="status">
+                        {{ session('contact_status') }}
+                    </div>
+                @endif
+
+                @if($errors->contact->any() || $errors->hasAny(['name', 'email', 'subject', 'message']))
+                    <div class="rounded-lg border border-[#E07A7A]/40 bg-[#E07A7A]/12 px-4 py-3 text-sm text-[#F5C6C6]" role="alert">
+                        {{ $errors->contact->first() ?: $errors->first() }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('contact.store') }}" class="space-y-4">
+                    @csrf
+                    <div class="hidden" aria-hidden="true">
+                        <label for="contact-website">Leave blank</label>
+                        <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label for="contact-name" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Your Name</label>
+                            <input id="contact-name" name="name" type="text" required value="{{ old('name') }}" class="abc-input text-sm" placeholder="e.g. Camille Reyes">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label for="contact-email" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Email Address</label>
+                            <input id="contact-email" name="email" type="email" required value="{{ old('email') }}" class="abc-input text-sm" placeholder="you@example.ph">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="contact-subject" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Subject</label>
+                        <input id="contact-subject" name="subject" type="text" required value="{{ old('subject') }}" class="abc-input text-sm" placeholder="Private event, coffee beans, feedback...">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="contact-message" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Message</label>
+                        <textarea id="contact-message" name="message" rows="4" required class="abc-input text-sm" placeholder="Tell us how we can help...">{{ old('message') }}</textarea>
+                    </div>
+
+                    <button type="submit" class="studio-btn-primary">
+                        Send Enquiry
+                    </button>
+                </form>
+            </div>
+
+            <div id="newsletter" class="lg:col-span-5 abc-panel p-6 sm:p-8 space-y-5" data-reveal>
+                <div class="space-y-2">
+                    <span class="inline-block text-xs font-semibold uppercase tracking-[0.26em] text-[#D2B077]">Seasonal Dispatch</span>
+                    <h2 class="font-display text-3xl font-semibold text-[#F4EEE5]">New Roasts &amp; Studio Drinks</h2>
+                    <p class="text-sm text-[#BFB4A5] leading-relaxed">
+                        Occasional invitations when limited micro-lots, ceremonial matcha pairings, or seasonal signatures arrive at the bar. Confirmation required before sending.
+                    </p>
+                </div>
+
+                @if(session('newsletter_status'))
+                    <div class="rounded-lg border border-[#9CAF94]/40 bg-[#9CAF94]/12 px-4 py-3 text-sm text-[#D7E4D1]" role="status">
+                        {{ session('newsletter_status') }}
+                    </div>
+                @endif
+
+                @if($errors->newsletter->any() || $errors->hasAny(['newsletter_email', 'newsletter_consent']))
+                    <div class="rounded-lg border border-[#E07A7A]/40 bg-[#E07A7A]/12 px-4 py-3 text-sm text-[#F5C6C6]" role="alert">
+                        {{ $errors->newsletter->first() ?: $errors->first('newsletter_email') ?: $errors->first('newsletter_consent') }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('newsletter.subscribe') }}" class="space-y-4">
+                    @csrf
+                    <div class="hidden" aria-hidden="true">
+                        <label for="newsletter-company">Leave blank</label>
+                        <input id="newsletter-company" name="company" type="text" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="newsletter-name" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Name (Optional)</label>
+                        <input id="newsletter-name" name="newsletter_name" type="text" value="{{ old('newsletter_name') }}" class="abc-input text-sm" placeholder="First name">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="newsletter-email" class="block text-xs font-medium uppercase tracking-wider text-[#BFB4A5]">Email Address</label>
+                        <input id="newsletter-email" name="newsletter_email" type="email" required value="{{ old('newsletter_email') }}" class="abc-input text-sm" placeholder="you@example.ph">
+                    </div>
+
+                    <label class="flex items-start gap-2.5 text-xs text-[#BFB4A5] cursor-pointer leading-relaxed">
+                        <input type="checkbox" name="newsletter_consent" value="1" required class="mt-0.5 accent-[#D2B077]">
+                        <span>Yes, email me Artisan Brew Co. seasonal drinks and announcements. You can unsubscribe with one click anytime.</span>
+                    </label>
+
+                    <button type="submit" class="studio-btn-ghost w-full justify-center">
+                        Request Subscription
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
     <section id="visit" class="studio-anchor studio-section-divider studio-section-visit relative py-28 sm:py-36 overflow-hidden">
         <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
         <div class="relative z-10 max-w-4xl mx-auto px-5 sm:px-8 text-center space-y-8" data-reveal>

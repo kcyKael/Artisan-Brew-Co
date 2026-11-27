@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/brevo/*',
+        ]);
+
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'role' => EnsureUserHasRole::class,

@@ -128,6 +128,32 @@ const initAppShell = () => {
             openVoidDialog();
         }
     }
+
+    const inviteToggle = document.getElementById('staff-invite-mode');
+    const invitePasswordWrap = document.querySelector('[data-invite-password-fields]');
+    const invitePasswordInputs = Array.from(document.querySelectorAll('[data-invite-password-input]'));
+    const staffEmailInput = document.getElementById('email');
+    const staffActiveCheckbox = document.getElementById('staff-is-active');
+    if (inviteToggle && invitePasswordWrap) {
+        const syncInviteFields = () => {
+            const inviteMode = inviteToggle.checked;
+            invitePasswordWrap.classList.toggle('hidden', inviteMode);
+            invitePasswordInputs.forEach((input) => {
+                input.required = !inviteMode;
+                if (inviteMode) {
+                    input.value = '';
+                }
+            });
+            if (staffEmailInput) {
+                staffEmailInput.required = inviteMode;
+            }
+            if (staffActiveCheckbox && inviteMode) {
+                staffActiveCheckbox.checked = false;
+            }
+        };
+        inviteToggle.addEventListener('change', syncInviteFields);
+        syncInviteFields();
+    }
 };
 
 if (document.readyState === 'loading') {

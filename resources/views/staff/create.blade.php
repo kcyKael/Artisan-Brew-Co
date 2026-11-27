@@ -20,6 +20,11 @@
                 </div>
             </div>
 
+            <div class="space-y-1.5">
+                <label for="email" class="block text-sm font-medium text-[#F4EEE5]">Staff Email (Required for invitations &amp; password resets)</label>
+                <input id="email" name="email" type="email" value="{{ old('email') }}" class="abc-input" placeholder="mateo@artisanbrewco.ph">
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label for="role" class="block text-sm font-medium text-[#F4EEE5]">Role</label>
@@ -29,23 +34,27 @@
                     </select>
                 </div>
 
-                <div class="flex items-end pb-2">
+                <div class="flex flex-col justify-end gap-2 pb-1">
+                    <label class="inline-flex items-center gap-2 text-sm text-[#D2B077] cursor-pointer">
+                        <input id="staff-invite-mode" type="checkbox" name="invite_mode" value="1" @checked(old('invite_mode')) class="accent-[#D2B077]">
+                        <span>Send activation invite email instead of setting password now</span>
+                    </label>
                     <label class="inline-flex items-center gap-2 text-sm text-[#F4EEE5] cursor-pointer">
-                        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', true)) class="accent-[#D2B077]">
+                        <input id="staff-is-active" type="checkbox" name="is_active" value="1" @checked(old('is_active', true)) class="accent-[#D2B077]">
                         <span>Account is active</span>
                     </label>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div data-invite-password-fields class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label for="password" class="block text-sm font-medium text-[#F4EEE5]">Password (min 8 chars)</label>
-                    <input id="password" name="password" type="password" required autocomplete="new-password" class="abc-input">
+                    <input id="password" data-invite-password-input name="password" type="password" required autocomplete="new-password" class="abc-input">
                 </div>
 
                 <div class="space-y-1.5">
                     <label for="password_confirmation" class="block text-sm font-medium text-[#F4EEE5]">Confirm Password</label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="abc-input">
+                    <input id="password_confirmation" data-invite-password-input name="password_confirmation" type="password" required autocomplete="new-password" class="abc-input">
                 </div>
             </div>
 

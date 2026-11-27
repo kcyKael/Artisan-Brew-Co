@@ -7,6 +7,8 @@ use App\Http\Requests\RecordSaleRequest;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Services\CheckoutService;
+use App\Services\Email\MarketingSubscriberService;
+use App\Services\Email\OrderReceiptEmailService;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -53,8 +55,12 @@ class RecordSaleController extends Controller
         ]);
     }
 
-    public function store(RecordSaleRequest $request, CheckoutService $checkout): RedirectResponse
-    {
+    public function store(
+        RecordSaleRequest $request,
+        CheckoutService $checkout,
+        OrderReceiptEmailService $receiptEmails,
+        MarketingSubscriberService $subscribers,
+    ): RedirectResponse {
         $validated = $request->validated();
 
         try {
@@ -99,6 +105,19 @@ class RecordSaleController extends Controller
         }
 
         $order = $result->order;
+
+        $requestedReceiptEmail = trim((string) ($validated['receipt_email'] ?? ''));
+        if ($requestedReceiptEmail !== '' && ! $result->wasReplay) {
+            $receiptEmails->queueInitialReceipt($order, $requestedReceiptEmail, $request->user());
+            if ($request->boolean('marketing_opt_in')) {
+                $subscribers->requestSubscription(
+                    $requestedReceiptEmail,
+                    $order->customer_name_snapshot ?: $order->customer?->full_name,
+                    'record_sale_opt_in',
+                    $order->customer
+                );
+            }
+        }
 
         return redirect()
             ->route('orders.receipt', $order)

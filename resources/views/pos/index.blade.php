@@ -145,6 +145,13 @@
                             <input id="pos-cup-name" type="text" maxlength="60" aria-label="Cup name" class="abc-input text-xs py-1.5" placeholder="Name on cup (walk-in)">
                             <input id="pos-order-note" type="text" maxlength="200" aria-label="Order note" class="abc-input text-xs py-1.5" placeholder="Order note (optional)">
                         </div>
+                        <div class="space-y-1.5 pt-1">
+                            <input id="pos-receipt-email" type="email" maxlength="191" aria-label="Digital receipt email" class="abc-input text-xs py-1.5" placeholder="Email receipt to customer (optional)">
+                            <label class="inline-flex items-center gap-2 text-[11px] text-[#BFB4A5] cursor-pointer">
+                                <input id="pos-marketing-opt-in" type="checkbox" class="accent-[#D2B077]">
+                                <span>Customer wants seasonal promos (double opt-in)</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="space-y-2 pt-3 border-t border-white/10">
@@ -367,6 +374,18 @@
                         <span class="font-medium text-[#F4EEE5]">View Full Order Details</span>
                         <svg class="w-4 h-4 text-[#BFB4A5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
+                    <div id="pos-success-email-status" class="hidden rounded-lg border border-[#D2B077]/35 bg-[#D2B077]/10 px-3 py-2 text-xs text-[#F4EEE5] text-left"></div>
+                    <form id="pos-dialog-email-form" class="abc-surface p-3 space-y-2 text-left">
+                        <div class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#D2B077]">Send Receipt by Email</div>
+                        <div class="flex gap-2">
+                            <input id="pos-dialog-receipt-email" type="email" maxlength="191" required aria-label="Customer email" class="abc-input text-xs py-1.5 flex-1" placeholder="customer@example.ph">
+                            <button type="submit" id="pos-dialog-email-submit" class="abc-btn-primary py-1.5 px-3 text-xs shrink-0">Send</button>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-[11px] text-[#BFB4A5] cursor-pointer">
+                            <input id="pos-dialog-marketing-opt-in" type="checkbox" class="accent-[#D2B077]">
+                            <span>Opt in to seasonal drinks newsletter</span>
+                        </label>
+                    </form>
                     <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
                         <button type="button" id="pos-receipt-new-order" class="abc-btn-secondary flex-1 min-h-[44px]">New Order</button>
                         <a id="pos-receipt-print-link" href="#" class="abc-btn-success flex-1 min-h-[44px]">Print Receipt</a>

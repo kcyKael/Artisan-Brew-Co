@@ -26,7 +26,7 @@
                         <thead>
                             <tr>
                                 <th>Staff Member</th>
-                                <th>Username</th>
+                                <th>Username &amp; Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th class="text-right">Orders</th>
@@ -48,16 +48,32 @@
                                             <span class="font-medium text-[#F4EEE5]">{{ $member->full_name }}</span>
                                         </div>
                                     </td>
-                                    <td class="text-sm text-[#BFB4A5]">{{ $member->username }}</td>
+                                    <td class="text-sm text-[#BFB4A5]">
+                                        <div class="text-[#F4EEE5]">{{ $member->username }}</div>
+                                        @if(filled($member->email))
+                                            <div class="text-xs text-[#BFB4A5]">{{ $member->email }}</div>
+                                        @endif
+                                    </td>
                                     <td>
                                         <x-status-badge :tone="$member->isAdmin() ? 'accent' : 'neutral'">
                                             {{ ucfirst($member->role) }}
                                         </x-status-badge>
                                     </td>
                                     <td>
-                                        <x-status-badge :tone="$member->is_active ? 'success' : 'danger'">
-                                            {{ $member->is_active ? 'Active' : 'Inactive' }}
-                                        </x-status-badge>
+                                        @php
+                                            $latestInvite = $member->latestInvitation;
+                                            $inviteState = $latestInvite?->effectiveStatus();
+                                        @endphp
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <x-status-badge :tone="$member->is_active ? 'success' : 'danger'">
+                                                {{ $member->is_active ? 'Active' : 'Inactive' }}
+                                            </x-status-badge>
+                                            @if($inviteState === 'pending')
+                                                <x-status-badge tone="accent">Invite Pending</x-status-badge>
+                                            @elseif($inviteState === 'expired')
+                                                <x-status-badge tone="danger">Invite Expired</x-status-badge>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="text-right tabular-nums">{{ $member->orders_count }}</td>
                                     <td class="text-right whitespace-nowrap">

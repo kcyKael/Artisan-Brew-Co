@@ -41,6 +41,7 @@ class Product extends Model
             'stock_version' => 'integer',
             'is_active' => 'boolean',
             'archived_at' => 'datetime',
+            'last_stock_alert_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

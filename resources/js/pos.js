@@ -123,6 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const liveReceiptWrap = document.getElementById('pos-live-receipt-wrap');
     const receiptPrintLink = document.getElementById('pos-receipt-print-link');
     const receiptNewOrderBtn = document.getElementById('pos-receipt-new-order');
+    const receiptEmailInput = document.getElementById('pos-receipt-email');
+    const marketingOptInInput = document.getElementById('pos-marketing-opt-in');
+    const successEmailStatus = document.getElementById('pos-success-email-status');
+    const dialogEmailForm = document.getElementById('pos-dialog-email-form');
+    const dialogEmailInput = document.getElementById('pos-dialog-receipt-email');
+    const dialogMarketingOptIn = document.getElementById('pos-dialog-marketing-opt-in');
+    const dialogEmailSubmit = document.getElementById('pos-dialog-email-submit');
+    let lastEmailReceiptUrl = null;
 
     let configuringProduct = null;
 
@@ -1060,6 +1068,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (customerSelect) customerSelect.value = '';
         if (cupNameInput) cupNameInput.value = '';
         if (orderNoteInput) orderNoteInput.value = '';
+        if (receiptEmailInput) receiptEmailInput.value = '';
+        if (marketingOptInInput) marketingOptInInput.checked = false;
         if (paymentRefInput) paymentRefInput.value = '';
         if (discountValueInput) discountValueInput.value = '';
         if (giftCardCodeInput) giftCardCodeInput.value = '';
@@ -1131,6 +1141,8 @@ document.addEventListener('DOMContentLoaded', () => {
             payment_reference: paymentMethod === 'cash' ? null : (paymentRefInput?.value.trim() || null),
             cup_name: cupNameInput?.value.trim() || null,
             order_note: orderNoteInput?.value.trim() || null,
+            receipt_email: receiptEmailInput?.value.trim() || null,
+            marketing_opt_in: Boolean(marketingOptInInput?.checked),
             discount_type: discountType,
             discount_value: discountType === 'percent' || discountType === 'fixed' ? (discountValueInput?.value || null) : null,
             gift_card_code: discountType === 'giftcard' ? (giftCardCodeInput?.value.trim().toUpperCase() || null) : null,
@@ -1200,6 +1212,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (successDetailLink) successDetailLink.href = ord.detail_url;
                 if (receiptPrintLink) receiptPrintLink.href = ord.receipt_url;
+                lastEmailReceiptUrl = ord.email_receipt_url || null;
+                if (dialogEmailInput) dialogEmailInput.value = ord.customer_email || '';
+                if (dialogMarketingOptIn) dialogMarketingOptIn.checked = false;
+                if (successEmailStatus) {
+                    if (data.receipt_email_status) {
+                        successEmailStatus.textContent = `Digital receipt queued (${data.receipt_email_status}).`;
+                        successEmailStatus.classList.remove('hidden');
+                    } else {
+                        successEmailStatus.textContent = '';
+                        successEmailStatus.classList.add('hidden');
+                    }
+                }
                 if (liveReceiptWrap) {
                     liveReceiptWrap.innerHTML = '';
                     liveReceiptWrap.appendChild(buildLiveReceiptElement(ord));
@@ -1216,6 +1240,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     receiptNewOrderBtn?.addEventListener('click', () => receiptDialog?.close());
+
+    dialogEmailForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!lastEmailReceiptUrl || !dialogEmailInput) return;
+        const emailVal = dialogEmailInput.value.trim();
+        if (!emailVal) return;
+
+        if (dialogEmailSubmit) dialogEmailSubmit.disabled = true;
+        try {
+            const res = await fetch(lastEmailReceiptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    receipt_email: emailVal,
+                    confirm_address: true,
+                    marketing_opt_in: Boolean(dialogMarketingOptIn?.checked),
+                }),
+            });
+            if (successEmailStatus) {
+                successEmailStatus.classList.remove('hidden');
+                successEmailStatus.textContent = res.ok
+                    ? `Digital receipt queued for ${emailVal}.`
+                    : 'Unable to send receipt email. Check the address or try from the receipt page.';
+            }
+        } catch {
+            if (successEmailStatus) {
+                successEmailStatus.classList.remove('hidden');
+                successEmailStatus.textContent = 'Network error while queuing digital receipt.';
+            }
+        } finally {
+            if (dialogEmailSubmit) dialogEmailSubmit.disabled = false;
+        }
+    });
 
     renderCart();
 });

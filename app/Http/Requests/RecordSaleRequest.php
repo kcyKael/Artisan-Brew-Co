@@ -31,6 +31,8 @@ class RecordSaleRequest extends FormRequest
             'gift_card_code' => ['nullable', 'required_if:discount_type,giftcard', 'string', 'max:60'],
             'note' => ['nullable', 'string', 'max:120'],
             'quantity' => ['required', 'integer', 'min:1', 'max:999'],
+            'receipt_email' => ['nullable', 'string', 'email', 'max:191'],
+            'marketing_opt_in' => ['nullable', 'boolean'],
             'cash_received' => [
                 'nullable',
                 Rule::requiredIf(fn () => in_array($this->input('payment_method'), [null, '', 'cash'], true)),

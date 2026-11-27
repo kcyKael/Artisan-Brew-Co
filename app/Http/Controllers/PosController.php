@@ -9,6 +9,8 @@ use App\Models\Customer;
 use App\Models\GiftCard;
 use App\Models\Product;
 use App\Services\CheckoutService;
+use App\Services\Email\MarketingSubscriberService;
+use App\Services\Email\OrderReceiptEmailService;
 use App\Support\BusinessTime;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
@@ -75,8 +77,12 @@ class PosController extends Controller
         ]);
     }
 
-    public function checkout(PosCheckoutRequest $request, CheckoutService $checkout): JsonResponse
-    {
+    public function checkout(
+        PosCheckoutRequest $request,
+        CheckoutService $checkout,
+        OrderReceiptEmailService $receiptEmails,
+        MarketingSubscriberService $subscribers,
+    ): JsonResponse {
         $validated = $request->validated();
 
         try {
@@ -105,6 +111,23 @@ class PosController extends Controller
         }
 
         $order = $result->order;
+
+        $receiptEmailStatus = null;
+        $requestedReceiptEmail = trim((string) ($validated['receipt_email'] ?? ''));
+        if ($requestedReceiptEmail !== '' && ! $result->wasReplay) {
+            $delivery = $receiptEmails->queueInitialReceipt($order, $requestedReceiptEmail, $request->user());
+            $receiptEmailStatus = $delivery?->status;
+
+            if ($request->boolean('marketing_opt_in')) {
+                $subscribers->requestSubscription(
+                    $requestedReceiptEmail,
+                    $order->customer_name_snapshot ?: $order->customer?->full_name,
+                    'pos_checkout_opt_in',
+                    $order->customer
+                );
+            }
+        }
+
         $updatedStocks = Product::query()
             ->whereIn('id', $order->sales->pluck('product_id')->unique()->all())
             ->pluck('stock_quantity', 'id');
@@ -115,11 +138,13 @@ class PosController extends Controller
                 : "Sale completed — Receipt {$order->order_number}.",
             'was_replay' => $result->wasReplay,
             'next_checkout_token' => Str::uuid()->toString(),
+            'receipt_email_status' => $receiptEmailStatus,
             'stocks' => $updatedStocks,
             'order' => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'customer_name' => $order->customer_name_snapshot,
+                'customer_email' => $order->customer?->email,
                 'staff_name' => $order->staff_name_snapshot,
                 'order_type' => $order->order_type,
                 'payment_method' => $order->payment_method,
@@ -137,6 +162,7 @@ class PosController extends Controller
                 'change_formatted' => Money::formatPhp((string) $order->change_amount),
                 'receipt_url' => route('orders.receipt', $order),
                 'detail_url' => route('orders.show', $order),
+                'email_receipt_url' => route('orders.email-receipt', $order),
                 'lines' => $order->sales->map(fn ($sale) => [
                     'product_name' => $sale->product_name_snapshot,
                     'variant_label' => $sale->variant_label_snapshot,
