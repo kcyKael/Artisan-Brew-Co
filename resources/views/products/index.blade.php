@@ -1,5 +1,5 @@
 @php
-use App\Support\Money;
+    use App\Support\Money;
 @endphp
 
 <x-layouts.app title="Menu & Stock">
@@ -73,11 +73,7 @@ use App\Support\Money;
                                 <tr>
                                     <td>
                                         <div class="flex items-center gap-3">
-                                            @if($product->imageUrl())
-                                                <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="w-12 h-9 rounded-md object-cover border border-white/10 shrink-0">
-                                            @else
-                                                <div class="w-12 h-9 rounded-md bg-[#28241F] border border-white/10 flex items-center justify-center text-[10px] text-[#BFB4A5] shrink-0">ABC</div>
-                                            @endif
+                                            <x-product-image :product="$product" size="thumb" class="border border-white/10" />
                                             <div>
                                                 <div class="font-medium text-[#F4EEE5]">{{ $product->name }}</div>
                                                 <div class="text-xs text-[#BFB4A5]">

@@ -225,4 +225,66 @@ class CrudAndUploadTest extends TestCase
         $this->delete("/staff/{$barista->id}")->assertRedirect('/staff');
         $this->assertDatabaseMissing('users', ['id' => $barista->id]);
     }
+
+    public function test_creating_product_without_sku_automatically_generates_unique_sku(): void
+    {
+        $admin = $this->makeAdmin('admin_sku');
+        $this->actingAs($admin);
+
+        $category = Category::create([
+            'name' => 'Espresso Bar',
+            'slug' => 'espresso-bar',
+            'sort_order' => 1,
+            'is_drink' => true,
+            'is_active' => true,
+        ]);
+
+        $this->post('/products', [
+            'name' => 'Spanish Latte',
+            'category_id' => $category->id,
+            'sku' => '',
+            'price' => '155.00',
+            'stock_quantity' => 20,
+            'low_stock_threshold' => 5,
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $first = Product::where('name', 'Spanish Latte')->firstOrFail();
+        $this->assertNotNull($first->sku);
+        $this->assertMatchesRegularExpression('/^ABC-[A-Z0-9]{3}-\d{4}$/', $first->sku);
+        $this->assertStringStartsWith('ABC-ESP-', $first->sku);
+
+        $this->post('/products', [
+            'name' => 'Flat White',
+            'category_id' => $category->id,
+            'price' => '145.00',
+            'stock_quantity' => 15,
+            'low_stock_threshold' => 5,
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $second = Product::where('name', 'Flat White')->firstOrFail();
+        $this->assertNotNull($second->sku);
+        $this->assertMatchesRegularExpression('/^ABC-[A-Z0-9]{3}-\d{4}$/', $second->sku);
+        $this->assertNotSame($first->sku, $second->sku);
+
+        $this->post('/products', [
+            'name' => 'Single Origin Pour Over',
+            'category_id' => $category->id,
+            'sku' => 'CUSTOM-SKU-99',
+            'price' => '180.00',
+            'stock_quantity' => 10,
+            'low_stock_threshold' => 2,
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $third = Product::where('name', 'Single Origin Pour Over')->firstOrFail();
+        $this->assertSame('CUSTOM-SKU-99', $third->sku);
+
+        $indexResponse = $this->get('/products');
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('data-product-image-placeholder', false);
+        $indexResponse->assertDontSee('>ABC<', false);
+        $indexResponse->assertDontSee('No Image');
+    }
 }

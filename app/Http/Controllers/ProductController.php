@@ -78,10 +78,15 @@ class ProductController extends Controller
 
         try {
             $product = DB::transaction(function () use ($data, $request, $preparedImage): Product {
+                $sku = trim((string) ($data['sku'] ?? ''));
+                if ($sku === '') {
+                    $sku = $this->generateUniqueSku(isset($data['category_id']) ? (int) $data['category_id'] : null);
+                }
+
                 $product = new Product([
                     'name' => $data['name'],
                     'category_id' => $data['category_id'] ?? null,
-                    'sku' => $data['sku'] ?: null,
+                    'sku' => $sku,
                     'description' => $data['description'] ?? null,
                     'price' => $data['price'],
                     'stock_quantity' => (int) $data['stock_quantity'],
@@ -247,5 +252,23 @@ class ProductController extends Controller
         return redirect()
             ->route('products.index')
             ->with('status', "Product '{$product->name}' restored to the active menu.");
+    }
+
+    private function generateUniqueSku(?int $categoryId): string
+    {
+        $categoryName = $categoryId !== null
+            ? (string) (Category::query()->whereKey($categoryId)->value('name') ?? '')
+            : '';
+
+        $clean = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $categoryName));
+        $cat3 = $clean === '' ? 'MNU' : str_pad(substr($clean, 0, 3), 3, 'X');
+
+        $seq = Product::query()->count() + 1;
+        do {
+            $candidate = 'ABC-'.$cat3.'-'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+            $seq++;
+        } while (Product::query()->where('sku', $candidate)->exists());
+
+        return $candidate;
     }
 }

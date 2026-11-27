@@ -62,9 +62,7 @@ use App\Support\Money;
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                @if($product->imageUrl())
-                    <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" class="w-32 h-24 rounded-lg object-cover border border-white/10">
-                @endif
+                <x-product-image :product="$product" size="preview" class="border border-white/10" />
                 <div class="flex-1 space-y-2">
                     <label for="image" class="block text-sm font-medium text-[#F4EEE5]">Replace Product Image</label>
                     <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" class="abc-input text-xs">

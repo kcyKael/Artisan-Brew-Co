@@ -53,11 +53,7 @@
                                  data-sku="{{ $product->sku }}"
                                  class="abc-panel overflow-hidden flex flex-col">
                             <div class="aspect-[4/3] bg-[#28241F] relative overflow-hidden">
-                                @if($product->imageUrl())
-                                    <img src="{{ $product->imageUrl() }}" alt="{{ $product->name }}" loading="lazy" class="w-full h-full object-cover">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-xs text-[#BFB4A5]">No Image</div>
-                                @endif
+                                <x-product-image :product="$product" size="card" />
                             </div>
 
                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
