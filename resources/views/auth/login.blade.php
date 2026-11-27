@@ -1,9 +1,11 @@
 <x-layouts.guest title="Staff Sign In">
     <div class="w-full max-w-5xl abc-panel overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         <div class="lg:col-span-6 relative min-h-[240px] lg:min-h-[580px] bg-[#161412]">
-            <img src="{{ asset('images/cafe-interior-bar.jpg') }}"
-                 alt="Artisan Brew Co. charcoal stone counter, warm amber bar lighting, and espresso seating"
-                 class="absolute inset-0 w-full h-full object-cover object-center">
+            <img src="{{ asset('images/moment-counter-bar.webp') }}"
+                 alt="Artisan Brew Co. charcoal stone counter, warm amber pendant lights, and matte-black espresso machine"
+                 width="876"
+                 height="1400"
+                 class="absolute inset-0 w-full h-full object-cover object-[52%_46%]">
             <div class="absolute inset-0 bg-gradient-to-t from-[#111110] via-[#111110]/45 to-[#111110]/20"></div>
             <div class="relative z-10 h-full flex flex-col justify-between p-6 sm:p-8">
                 <x-brand-logo />

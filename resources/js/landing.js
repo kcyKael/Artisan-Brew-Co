@@ -281,7 +281,7 @@ const initLanding = () => {
 
     if (!reducedMotion) {
         document.querySelectorAll('[data-reveal]').forEach((item) => {
-            gsap.fromTo(
+            const tween = gsap.fromTo(
                 item,
                 { y: 26, opacity: 0 },
                 {
@@ -292,11 +292,14 @@ const initLanding = () => {
                     clearProps: 'transform,opacity',
                     scrollTrigger: {
                         trigger: item,
-                        start: 'top 86%',
+                        start: 'top 92%',
                         once: true,
                     },
                 }
             );
+            if (item.getBoundingClientRect().top <= window.innerHeight * 0.95) {
+                tween.progress(1);
+            }
         });
 
         document.querySelectorAll('[data-parallax-img]').forEach((media) => {
@@ -351,6 +354,7 @@ const initLanding = () => {
         } else {
             runHeroEntrance(true);
         }
+        ScrollTrigger.refresh();
     };
 
     const onIntroKeyDown = (event) => {
@@ -362,7 +366,8 @@ const initLanding = () => {
     skipBtn?.addEventListener('click', () => finishIntro(true));
     document.addEventListener('keydown', onIntroKeyDown);
 
-    const shouldPlayIntro = Boolean(introOverlay) && !reducedMotion && (!readIntroSeen() || replayRequested);
+    const hasAnchorHash = window.location.hash.length > 1;
+    const shouldPlayIntro = Boolean(introOverlay) && !reducedMotion && !hasAnchorHash && (!readIntroSeen() || replayRequested);
 
     if (shouldPlayIntro) {
         const assetList = [

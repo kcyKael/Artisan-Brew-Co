@@ -263,16 +263,20 @@
                 <div data-reveal class="relative grid grid-cols-12 gap-4 items-center">
                     <div class="col-span-10 col-start-3 aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 bg-[#1E1A16]">
                         <img data-parallax-img
-                             src="{{ $craftBrew?->imageUrl() ?? asset('images/cafe-interior-bar.jpg') }}"
+                             src="{{ $craftBrew?->imageUrl() ?? asset('images/moment-counter-bar.webp') }}"
                              alt="{{ $craftBrew ? $craftBrew->name . ' poured at Artisan Brew Co.' : 'Artisan Brew Co. espresso studio' }}"
                              loading="lazy"
+                             decoding="async"
                              class="w-full h-[112%] -mt-[6%] object-cover object-center">
                     </div>
                     <div class="col-span-6 col-start-1 -mt-28 sm:-mt-36 relative z-10 aspect-square rounded-2xl overflow-hidden border border-[#D2B077]/25 bg-[#161412] shadow-2xl">
-                        <img src="{{ asset('images/cafe-interior-bar.jpg') }}"
-                             alt="Warm lighting across the Artisan Brew Co. espresso counter"
+                        <img src="{{ asset('images/moment-counter-bar.webp') }}"
+                             alt="Matte-black espresso machine and amber pendant lamps on the Artisan Brew Co. bar"
+                             width="876"
+                             height="1400"
                              loading="lazy"
-                             class="w-full h-full object-cover object-center">
+                             decoding="async"
+                             class="w-full h-full object-cover object-[52%_46%]">
                     </div>
                 </div>
             </div>
@@ -293,13 +297,16 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                <figure data-reveal class="lg:col-span-7 group relative overflow-hidden rounded-2xl border border-white/10 bg-[#161412] min-h-[340px] sm:min-h-[460px]">
+                <figure data-reveal class="lg:col-span-7 group relative overflow-hidden rounded-2xl border border-white/10 bg-[#161412] aspect-[4/5] sm:aspect-[4/4] lg:aspect-auto lg:h-[520px]">
                     <img data-parallax-img
-                         src="{{ asset('images/cafe-interior-lounge.jpg') }}"
-                         alt="Artisan Brew Co. dining room with textured charcoal stone wall and timber seating"
+                         src="{{ asset('images/moment-main-studio.webp') }}"
+                         alt="Quiet walnut dining tables, textured charcoal stone wall, brass lamps, and indoor greenery at Artisan Brew Co."
+                         width="1024"
+                         height="1280"
                          loading="lazy"
-                         class="w-full h-[112%] -mt-[6%] object-cover object-center">
-                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(22,20,18)]/85 via-[rgb(22,20,18)]/20 to-transparent"></div>
+                         decoding="async"
+                         class="w-full h-[112%] -mt-[6%] object-cover object-[45%_54%]">
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[rgb(16,14,13)]/90 via-[rgb(18,16,14)]/45 to-transparent"></div>
                     <figcaption class="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
                         <div>
                             <div class="text-[11px] uppercase tracking-[0.22em] text-[#D2B077]">Main Studio</div>
@@ -308,13 +315,16 @@
                     </figcaption>
                 </figure>
 
-                <figure data-reveal class="lg:col-span-5 group relative overflow-hidden rounded-2xl border border-white/10 bg-[#161412] min-h-[340px] sm:min-h-[460px]">
+                <figure data-reveal class="lg:col-span-5 group relative overflow-hidden rounded-2xl border border-white/10 bg-[#161412] aspect-[4/5] sm:aspect-[4/4] lg:aspect-auto lg:h-[520px]">
                     <img data-parallax-img
-                         src="{{ asset('images/cafe-interior-bar.jpg') }}"
-                         alt="Artisan Brew Co. illuminated counter bar and elevated wood seating"
+                         src="{{ asset('images/moment-counter-bar.webp') }}"
+                         alt="Matte-black espresso machine, dual coffee grinders, and warm amber pendant lights at the Artisan Brew Co. counter"
+                         width="876"
+                         height="1400"
                          loading="lazy"
-                         class="w-full h-[112%] -mt-[6%] object-cover object-center">
-                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(22,20,18)]/85 via-[rgb(22,20,18)]/20 to-transparent"></div>
+                         decoding="async"
+                         class="w-full h-[112%] -mt-[6%] object-cover object-[52%_46%]">
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[rgb(16,14,13)]/90 via-[rgb(18,16,14)]/45 to-transparent"></div>
                     <figcaption class="absolute bottom-6 left-6 right-6">
                         <div class="text-[11px] uppercase tracking-[0.22em] text-[#D2B077]">The Counter</div>
                         <div class="font-display text-2xl font-semibold text-[#F4EEE5]">Warm amber glow over the brew bar</div>
