@@ -59,8 +59,9 @@
                 </button>
             </form>
 
-            <div class="pt-2 border-t border-white/10 text-xs text-[#BFB4A5]">
-                Authorized Artisan Brew Co. staff only · Asia/Manila business clock
+            <div class="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-[#BFB4A5]">
+                <span>Authorized Artisan Brew Co. staff only · Asia/Manila business clock</span>
+                <a href="{{ route('home') }}" class="text-[#D2B077] hover:underline underline-offset-4">&larr; Back to Artisan Brew Co.</a>
             </div>
         </div>
     </div>

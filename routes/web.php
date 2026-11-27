@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuConfigController;
 use App\Http\Controllers\PosController;
@@ -13,13 +14,13 @@ use App\Http\Controllers\SalesHistoryController;
 use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route(auth()->user()->isAdmin() ? 'dashboard' : 'pos.index');
-    }
+Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/menu', [LandingController::class, 'menu'])->name('menu.public');
 
-    return redirect()->route('login');
-})->name('home');
+Route::get('/media/{type}/{filename}', [MediaController::class, 'show'])
+    ->whereIn('type', ['products', 'avatars'])
+    ->where('filename', '[a-zA-Z0-9_-]+\.(jpg|webp)')
+    ->name('media.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -28,11 +29,6 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-
-    Route::get('/media/{type}/{filename}', [MediaController::class, 'show'])
-        ->whereIn('type', ['products', 'avatars'])
-        ->where('filename', '[a-zA-Z0-9_-]+\.(jpg|webp)')
-        ->name('media.show');
 
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');

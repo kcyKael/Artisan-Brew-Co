@@ -11,6 +11,8 @@ export default defineConfig({
                 'resources/js/pos.js',
                 'resources/js/record-sale.js',
                 'resources/js/dashboard.js',
+                'resources/css/landing.css',
+                'resources/js/landing.js',
             ],
             refresh: true,
         }),
