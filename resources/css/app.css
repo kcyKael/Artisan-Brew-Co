@@ -342,43 +342,110 @@
     }
 }
 
-@keyframes abcReceiptUnroll {
+@keyframes abcCutterSweep {
     0% {
-        clip-path: inset(0 0 84% 0);
-        transform: translateY(-6px);
+        left: 6px;
+        opacity: 0;
     }
-    82% {
-        clip-path: inset(0 0 0 0);
-        transform: translateY(2px);
+    12% {
+        opacity: 1;
+    }
+    88% {
+        opacity: 1;
     }
     100% {
-        clip-path: inset(0 0 0 0);
-        transform: translateY(0);
+        left: calc(100% - 34px);
+        opacity: 0;
     }
 }
 
-@keyframes abcReceiptLineReveal {
-    0% {
-        opacity: 0;
-        transform: translateY(8px);
+@keyframes abcPrinterCutShake {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
     }
-    100% {
+    25% {
+        transform: translate3d(-1.5px, 0.5px, 0);
+    }
+    50% {
+        transform: translate3d(1.5px, -0.5px, 0);
+    }
+    75% {
+        transform: translate3d(-1px, 0, 0);
+    }
+}
+
+@keyframes abcLedPulse {
+    0%, 100% {
         opacity: 1;
-        transform: translateY(0);
+        box-shadow: 0 0 8px rgba(34, 168, 91, 0.75);
     }
+    50% {
+        opacity: 0.45;
+        box-shadow: 0 0 2px rgba(34, 168, 91, 0.3);
+    }
+}
+
+.abc-printer-stage {
+    width: 100%;
+    max-width: 356px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.abc-printer-stage.is-a4-mode {
+    max-width: 680px;
+}
+
+.abc-printer-stage.is-a4-mode .abc-printer-chute {
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.abc-printer-stage.is-a4-mode .abc-printer-body,
+.abc-printer-stage.is-a4-mode .abc-printer-controls {
+    display: none;
+}
+
+.abc-printer-chute {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    padding: 26px 14px 10px;
+    margin-bottom: -10px;
+    overflow: hidden;
 }
 
 .receipt-paper {
     position: relative;
-    background-color: #FFFFFF;
-    color: #1A1D21;
+    z-index: 20;
+    background: linear-gradient(180deg, #FCF9F3 0%, #F7F2E8 52%, #FAF6ED 100%);
+    color: #1B1917;
     width: 100%;
     max-width: 310px;
     margin: 0 auto;
-    padding: 1.25rem 1rem 1.5rem;
-    border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
-    box-shadow: 0 12px 40px rgba(16, 24, 40, 0.22);
+    padding: 1.25rem 1rem 1.35rem;
+    border-radius: 0;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38), inset 1px 0 0 rgba(120, 105, 86, 0.14), inset -1px 0 0 rgba(120, 105, 86, 0.14);
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    will-change: transform;
+}
+
+.receipt-paper::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -7px;
+    height: 7px;
+    background-image:
+        linear-gradient(135deg, transparent 50%, #FCF9F3 50%),
+        linear-gradient(225deg, transparent 50%, #FCF9F3 50%);
+    background-position: 0 0, 0 0;
+    background-size: 10px 7px;
+    background-repeat: repeat-x;
+    filter: drop-shadow(0 -1px 0 rgba(120, 105, 86, 0.18));
 }
 
 .receipt-paper::after {
@@ -386,24 +453,194 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -6px;
-    height: 6px;
-    background: radial-gradient(circle at 6px 0, #FFFFFF 5px, transparent 5.5px) repeat-x;
-    background-size: 12px 6px;
+    bottom: -7px;
+    height: 7px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #FAF6ED 50%),
+        linear-gradient(-45deg, transparent 50%, #FAF6ED 50%);
+    background-position: 0 0, 0 0;
+    background-size: 10px 7px;
+    background-repeat: repeat-x;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
 }
 
 .receipt-paper.receipt-a4 {
     max-width: 680px;
     padding: 2rem;
+    border-radius: 0.5rem;
 }
 
-.receipt-unroll {
-    animation: abcReceiptUnroll 1450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.receipt-paper.receipt-a4::before,
+.receipt-paper.receipt-a4::after {
+    display: none;
 }
 
-.receipt-line {
-    animation: abcReceiptLineReveal 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--line-index, 0) * 75ms + 160ms);
+.abc-printer-body {
+    position: relative;
+    width: 100%;
+    max-width: 348px;
+    margin: 0 auto;
+    user-select: none;
+}
+
+.abc-printer-stage[data-state="cutting"] .abc-printer-body {
+    animation: abcPrinterCutShake 380ms ease-in-out;
+}
+
+.abc-printer-slot-recess {
+    position: relative;
+    z-index: 10;
+    height: 15px;
+    margin: 0 10px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, #070605 0%, #100E0D 100%);
+    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.92), 0 -1px 0 rgba(244, 238, 229, 0.08);
+    overflow: hidden;
+}
+
+.abc-printer-cutter-bar {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    left: 6px;
+    width: 28px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, rgba(210, 176, 119, 0.2) 0%, #F4EEE5 48%, #D2B077 75%, rgba(210, 176, 119, 0.2) 100%);
+    box-shadow: 0 0 14px rgba(223, 192, 139, 0.95), 0 0 4px #FFFFFF;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.abc-printer-stage[data-state="cutting"] .abc-printer-cutter-bar {
+    z-index: 35;
+    animation: abcCutterSweep 420ms cubic-bezier(0.32, 0, 0.2, 1) forwards;
+}
+
+.abc-printer-lip {
+    position: relative;
+    z-index: 30;
+    height: 13px;
+    margin: 0 2px;
+    border-radius: 5px 5px 0 0;
+    background: linear-gradient(180deg, #2B2723 0%, #1C1916 100%);
+    border-top: 1px solid rgba(210, 176, 119, 0.28);
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(244, 238, 229, 0.08);
+}
+
+.abc-printer-cutter-teeth {
+    position: absolute;
+    top: -3px;
+    left: 16px;
+    right: 16px;
+    height: 3px;
+    opacity: 0.42;
+    background: linear-gradient(135deg, #4A433B 50%, transparent 50%) 0 0 / 6px 3px repeat-x;
+}
+
+.abc-printer-deck {
+    position: relative;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.15rem 1rem;
+    border-radius: 0 0 0.875rem 0.875rem;
+    background: linear-gradient(180deg, #1E1B18 0%, #141210 72%, #0F0E0C 100%);
+    border: 1px solid rgba(244, 238, 229, 0.1);
+    border-top-color: rgba(244, 238, 229, 0.05);
+    box-shadow: inset 0 1px 0 rgba(244, 238, 229, 0.05), 0 18px 34px -12px rgba(0, 0, 0, 0.78);
+}
+
+.abc-printer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.abc-printer-badge {
+    font-family: var(--abc-font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--abc-bronze);
+}
+
+.abc-printer-model {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: rgba(191, 180, 165, 0.68);
+}
+
+.abc-printer-leds {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.abc-printer-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background-color: #D2B077;
+    box-shadow: 0 0 6px rgba(210, 176, 119, 0.55);
+    transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.abc-printer-stage[data-state="printing"] .abc-printer-led {
+    background-color: #22A85B;
+    animation: abcLedPulse 700ms ease-in-out infinite;
+}
+
+.abc-printer-stage[data-state="cutting"] .abc-printer-led {
+    background-color: #DFC08B;
+    box-shadow: 0 0 10px rgba(223, 192, 139, 0.85);
+}
+
+.abc-printer-stage[data-state="done"] .abc-printer-led {
+    background-color: #9CAF94;
+    box-shadow: 0 0 6px rgba(156, 175, 148, 0.6);
+}
+
+.abc-printer-shadow {
+    width: 88%;
+    height: 12px;
+    margin: -4px auto 0;
+    border-radius: 999px;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.68) 0%, transparent 72%);
+}
+
+.abc-printer-controls {
+    width: 100%;
+    max-width: 348px;
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.abc-printer-status-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--abc-text-muted);
+}
+
+.abc-printer-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: var(--abc-bronze);
+}
+
+.abc-printer-stage[data-state="printing"] .abc-printer-status-dot {
+    background-color: #22A85B;
+}
+
+.abc-printer-stage[data-state="done"] .abc-printer-status-dot {
+    background-color: #9CAF94;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -413,8 +650,9 @@
         transition-duration: 0.01ms !important;
     }
 
-    .receipt-unroll,
-    .receipt-line,
+    .receipt-paper,
+    .abc-printer-led,
+    .abc-printer-cutter-bar,
     .abc-cta-tick,
     .abc-bottom-sheet {
         animation: none !important;
@@ -451,24 +689,30 @@
         max-width: 100% !important;
     }
 
+    .abc-printer-stage,
+    .abc-printer-chute {
+        margin: 0 auto !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+    }
+
     .receipt-paper {
+        background: #FFFFFF !important;
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
         margin: 0 auto !important;
         padding: 0 !important;
         max-width: 100% !important;
-    }
-
-    .receipt-paper::after {
-        display: none !important;
-    }
-
-    .receipt-unroll,
-    .receipt-line {
+        transform: none !important;
         animation: none !important;
         clip-path: none !important;
         opacity: 1 !important;
-        transform: none !important;
+    }
+
+    .receipt-paper::before,
+    .receipt-paper::after {
+        display: none !important;
     }
 }

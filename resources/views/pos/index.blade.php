@@ -336,7 +336,7 @@
             </div>
         </dialog>
 
-        <dialog id="pos-receipt-dialog" class="m-auto rounded-2xl bg-[#1D1B18] text-[#F4EEE5] border border-white/15 p-0 max-w-3xl w-[95vw] backdrop:bg-black/80">
+        <dialog id="pos-receipt-dialog" class="m-auto rounded-2xl bg-[#1D1B18] text-[#F4EEE5] border border-white/15 p-0 max-w-3xl w-[95vw] max-h-[92dvh] overflow-y-auto backdrop:bg-black/80">
             <div class="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 <div class="md:col-span-6 text-center space-y-4">
                     <div class="mx-auto w-14 h-14 rounded-full bg-[var(--color-success-tint-dark)] border border-[#22A85B]/40 flex items-center justify-center text-[#22A85B]">

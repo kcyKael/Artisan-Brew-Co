@@ -1,3 +1,5 @@
+import { bindThermalPrinterControls, playThermalPrinter } from './thermal-printer';
+
 const initAppShell = () => {
     const clockEl = document.querySelector('[data-live-clock]');
     if (clockEl) {
@@ -88,11 +90,22 @@ const initAppShell = () => {
     });
 
     const receiptPaper = document.getElementById('receipt-paper');
+    const printerStage = document.querySelector('[data-thermal-printer]');
+    if (printerStage) {
+        bindThermalPrinterControls(printerStage);
+        playThermalPrinter(printerStage);
+    }
+
     document.querySelectorAll('[data-receipt-layout]').forEach((btn) => {
         btn.addEventListener('click', () => {
             if (!receiptPaper) return;
             const mode = btn.dataset.receiptLayout;
-            receiptPaper.classList.toggle('receipt-a4', mode === 'a4');
+            const isA4 = mode === 'a4';
+            receiptPaper.classList.toggle('receipt-a4', isA4);
+            printerStage?.classList.toggle('is-a4-mode', isA4);
+            if (printerStage) {
+                playThermalPrinter(printerStage, { immediate: isA4 });
+            }
             document.querySelectorAll('[data-receipt-layout]').forEach((other) => {
                 other.setAttribute('aria-pressed', other === btn ? 'true' : 'false');
                 other.classList.toggle('abc-btn-primary', other === btn);

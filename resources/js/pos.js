@@ -1,3 +1,5 @@
+import { bindThermalPrinterControls, cleanupThermalPrinter, playThermalPrinter } from './thermal-printer';
+
 function formatPhp(centavos) {
     const abs = Math.abs(centavos);
     const amount = (abs / 100).toLocaleString('en-PH', {
@@ -720,8 +722,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function buildLiveReceiptElement(ord) {
+        const stage = document.createElement('div');
+        stage.className = 'abc-printer-stage';
+        stage.dataset.thermalPrinter = '';
+        stage.dataset.animate = 'true';
+        stage.dataset.state = 'ready';
+
+        const chute = document.createElement('div');
+        chute.className = 'abc-printer-chute';
+
         const paper = document.createElement('article');
-        paper.className = 'receipt-paper receipt-unroll text-xs leading-relaxed';
+        paper.className = 'receipt-paper text-xs leading-relaxed';
 
         const header = document.createElement('div');
         header.className = 'text-center border-b border-dashed border-neutral-300 pb-3 mb-3 space-y-1';
@@ -847,12 +858,77 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const footer = document.createElement('div');
-        footer.className = 'receipt-line text-center text-[11px] text-[#6B7280]';
-        footer.style.setProperty('--line-index', String(totalsIndex + 1));
+        footer.className = 'text-center text-[11px] text-[#5F584F]';
         footer.textContent = 'Thank you for brewing with Artisan Brew Co.';
 
         paper.append(header, meta, linesWrap, totals, footer);
-        return paper;
+        chute.appendChild(paper);
+
+        const body = document.createElement('div');
+        body.className = 'abc-printer-body no-print';
+        body.setAttribute('aria-hidden', 'true');
+
+        const recess = document.createElement('div');
+        recess.className = 'abc-printer-slot-recess';
+        const cutterBar = document.createElement('div');
+        cutterBar.className = 'abc-printer-cutter-bar';
+        recess.appendChild(cutterBar);
+
+        const lip = document.createElement('div');
+        lip.className = 'abc-printer-lip';
+        const teeth = document.createElement('div');
+        teeth.className = 'abc-printer-cutter-teeth';
+        lip.appendChild(teeth);
+
+        const deck = document.createElement('div');
+        deck.className = 'abc-printer-deck';
+        const brandWrap = document.createElement('div');
+        brandWrap.className = 'abc-printer-brand';
+        const badge = document.createElement('span');
+        badge.className = 'abc-printer-badge';
+        badge.textContent = 'ABC';
+        const model = document.createElement('span');
+        model.className = 'abc-printer-model';
+        model.textContent = 'THERMAL · 80MM';
+        brandWrap.append(badge, model);
+
+        const leds = document.createElement('div');
+        leds.className = 'abc-printer-leds';
+        const led = document.createElement('span');
+        led.className = 'abc-printer-led';
+        leds.appendChild(led);
+        deck.append(brandWrap, leds);
+
+        const shadow = document.createElement('div');
+        shadow.className = 'abc-printer-shadow';
+
+        body.append(recess, lip, deck, shadow);
+
+        const controls = document.createElement('div');
+        controls.className = 'abc-printer-controls no-print';
+
+        const statusWrap = document.createElement('div');
+        statusWrap.className = 'abc-printer-status-wrap';
+        statusWrap.setAttribute('aria-live', 'polite');
+        const dot = document.createElement('span');
+        dot.className = 'abc-printer-status-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        const statusText = document.createElement('span');
+        statusText.className = 'abc-printer-status-text';
+        statusText.dataset.printerStatus = '';
+        statusText.textContent = 'Ready';
+        statusWrap.append(dot, statusText);
+
+        const replayBtn = document.createElement('button');
+        replayBtn.type = 'button';
+        replayBtn.dataset.replayPrinter = '';
+        replayBtn.className = 'abc-btn-secondary py-1.5 px-3 text-xs';
+        replayBtn.textContent = 'Replay Print';
+
+        controls.append(statusWrap, replayBtn);
+        stage.append(chute, body, controls);
+
+        return stage;
     }
 
     function syncQuickNoteChips() {
@@ -1224,11 +1300,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         successEmailStatus.classList.add('hidden');
                     }
                 }
+                let liveStage = null;
                 if (liveReceiptWrap) {
+                    const existingStage = liveReceiptWrap.querySelector('[data-thermal-printer]');
+                    if (existingStage) cleanupThermalPrinter(existingStage);
                     liveReceiptWrap.innerHTML = '';
-                    liveReceiptWrap.appendChild(buildLiveReceiptElement(ord));
+                    liveStage = buildLiveReceiptElement(ord);
+                    liveReceiptWrap.appendChild(liveStage);
+                    bindThermalPrinterControls(liveStage);
                 }
                 receiptDialog.showModal();
+                if (liveStage) {
+                    playThermalPrinter(liveStage);
+                }
             }
         } catch {
             showError('Network error while submitting sale. Retry safely — your checkout token prevents duplicate charges.');
@@ -1240,6 +1324,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     receiptNewOrderBtn?.addEventListener('click', () => receiptDialog?.close());
+    receiptDialog?.addEventListener('close', () => {
+        const activeStage = liveReceiptWrap?.querySelector('[data-thermal-printer]');
+        if (activeStage) {
+            cleanupThermalPrinter(activeStage);
+        }
+    });
 
     dialogEmailForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
