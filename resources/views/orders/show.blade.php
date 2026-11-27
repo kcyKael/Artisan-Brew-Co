@@ -156,8 +156,8 @@
     </div>
 
     @if($order->status === 'completed')
-        <dialog id="void-order-dialog" class="abc-panel p-6 w-full max-w-md m-auto text-[#F4EEE5] backdrop:bg-black/75">
-            <form method="POST" action="{{ route('orders.void', $order) }}" class="space-y-4">
+        <dialog id="void-order-dialog" data-auto-open="{{ ($hasVoidErrors || request()->boolean('void')) ? 'true' : 'false' }}" class="abc-panel p-0 w-full max-w-md m-auto text-[#F4EEE5] backdrop:bg-black/75">
+            <form method="POST" action="{{ route('orders.void', $order) }}" class="p-6 space-y-4">
                 @csrf
                 <div class="flex items-start justify-between gap-3">
                     <div>
@@ -211,36 +211,5 @@
                 </div>
             </form>
         </dialog>
-
-        <script>
-            (function () {
-                const dialog = document.getElementById('void-order-dialog');
-                if (!dialog) {
-                    return;
-                }
-                const openDialog = function () {
-                    if (!dialog.open) {
-                        dialog.showModal();
-                    }
-                };
-                const closeDialog = function () {
-                    if (dialog.open) {
-                        dialog.close();
-                    }
-                };
-                document.addEventListener('click', function (event) {
-                    if (event.target.closest('[data-open-void-dialog]')) {
-                        openDialog();
-                        return;
-                    }
-                    if (event.target.closest('[data-close-void-dialog]') || event.target === dialog) {
-                        closeDialog();
-                    }
-                });
-                @if($hasVoidErrors || request()->boolean('void'))
-                    openDialog();
-                @endif
-            })();
-        </script>
     @endif
 </x-layouts.app>

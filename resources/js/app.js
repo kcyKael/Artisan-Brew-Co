@@ -100,6 +100,34 @@ const initAppShell = () => {
             });
         });
     });
+
+    const voidDialog = document.getElementById('void-order-dialog');
+    if (voidDialog) {
+        const openVoidDialog = () => {
+            if (!voidDialog.open) {
+                voidDialog.showModal();
+            }
+        };
+        const closeVoidDialog = () => {
+            if (voidDialog.open) {
+                voidDialog.close();
+            }
+        };
+
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('[data-open-void-dialog]')) {
+                openVoidDialog();
+                return;
+            }
+            if (event.target.closest('[data-close-void-dialog]') || event.target === voidDialog) {
+                closeVoidDialog();
+            }
+        });
+
+        if (voidDialog.dataset.autoOpen === 'true') {
+            openVoidDialog();
+        }
+    }
 };
 
 if (document.readyState === 'loading') {
