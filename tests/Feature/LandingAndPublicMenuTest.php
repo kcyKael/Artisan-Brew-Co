@@ -138,4 +138,21 @@ class LandingAndPublicMenuTest extends TestCase
             ->get(route('media.show', ['type' => 'avatars', 'filename' => basename($avatarPath)]))
             ->assertOk();
     }
+
+    public function test_about_us_page_renders_rootkitcats_team_and_github_links(): void
+    {
+        $response = $this->get('/about');
+
+        $response->assertOk();
+        $response->assertSee('RootKitCats');
+        $response->assertSee('Kyl Aldric Valencia');
+        $response->assertSee('Emran Ryan Maina');
+        $response->assertSee('Jerahmeel Romero');
+        $response->assertSee('Erin Gabrielle Maliñana');
+        $response->assertSee('https://github.com/kcyKael', false);
+        $response->assertSee('https://github.com/ramenagiii', false);
+        $response->assertSee('https://github.com/jdgr1', false);
+        $response->assertSee('https://github.com/O3r1n-Br13ll3', false);
+        $this->assertSame(0, preg_match('/<script\b(?![^>]*\bsrc=)[^>]*>/i', $response->getContent()));
+    }
 }

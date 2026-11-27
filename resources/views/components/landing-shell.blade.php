@@ -62,6 +62,7 @@
                 <a href="{{ route('home') }}#the-craft" class="hover:text-[#F4EEE5] transition-colors">The Craft</a>
                 <a href="{{ route('home') }}#atmosphere" class="hover:text-[#F4EEE5] transition-colors">Atmosphere</a>
                 <a href="{{ route('home') }}#contact" class="hover:text-[#F4EEE5] transition-colors">Contact</a>
+                <a href="{{ route('about') }}" class="hover:text-[#F4EEE5] transition-colors">About Us</a>
             </nav>
 
             <div class="hidden md:flex items-center gap-4">
@@ -111,6 +112,7 @@
                     <a href="{{ route('home') }}#the-craft" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">The Craft</a>
                     <a href="{{ route('home') }}#atmosphere" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">Atmosphere</a>
                     <a href="{{ route('home') }}#contact" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">Contact</a>
+                    <a href="{{ route('about') }}" class="py-2 border-b border-white/10 text-[#F4EEE5] hover:text-[#D2B077]">About Us</a>
                     <a href="{{ route('menu.public') }}" class="py-2 border-b border-white/10 text-[#D2B077]">Full Menu</a>
                 </nav>
             </div>
@@ -152,6 +154,7 @@
                         <li><a href="{{ route('home') }}#signature-brews" class="hover:text-[#F4EEE5] transition-colors">Signature Brews</a></li>
                         <li><a href="{{ route('home') }}#the-craft" class="hover:text-[#F4EEE5] transition-colors">The Craft</a></li>
                         <li><a href="{{ route('home') }}#atmosphere" class="hover:text-[#F4EEE5] transition-colors">A Moment at ABC</a></li>
+                        <li><a href="{{ route('about') }}" class="hover:text-[#F4EEE5] transition-colors">About the Developers</a></li>
                         <li><a href="{{ route('menu.public') }}" class="hover:text-[#F4EEE5] transition-colors">Full Menu</a></li>
                     </ul>
                 </div>

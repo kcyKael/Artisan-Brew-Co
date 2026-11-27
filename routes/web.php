@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/menu', [LandingController::class, 'menu'])->name('menu.public');
+Route::get('/about', [LandingController::class, 'about'])->name('about');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');

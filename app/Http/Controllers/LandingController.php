@@ -85,4 +85,46 @@ class LandingController extends Controller
             'addons' => $addons,
         ]);
     }
+
+    public function about(): View
+    {
+        $developers = [
+            [
+                'name' => 'Kyl Aldric Valencia',
+                'handle' => 'kcyKael',
+                'role' => 'Project Lead, Full-Stack Developer, and System Architect',
+                'focus' => 'Led overall system architecture, end-to-end Laravel 12 engineering, Brevo HTTPS email infrastructure, deployment, and security hardening.',
+                'github' => 'https://github.com/kcyKael',
+                'badge' => 'Lead & Architect',
+            ],
+            [
+                'name' => 'Emran Ryan Maina',
+                'handle' => 'ramenagiii',
+                'role' => 'Backend Developer and Database Developer',
+                'focus' => 'Designed relational schema integrity, transactional POS checkout queries, stock locking, and historical ledger persistence.',
+                'github' => 'https://github.com/ramenagiii',
+                'badge' => 'Backend & Database',
+            ],
+            [
+                'name' => 'Jerahmeel Romero',
+                'handle' => 'jdgr1',
+                'role' => 'Frontend and Product Module Developer, UI/UX Lead Developer',
+                'focus' => 'Crafted the dark coffee-studio interface, product catalog & menu configuration flows, and responsive POS counter interactions.',
+                'github' => 'https://github.com/jdgr1',
+                'badge' => 'UI/UX & Product',
+            ],
+            [
+                'name' => 'Erin Gabrielle Maliñana',
+                'handle' => 'O3r1n-Br13ll3',
+                'role' => 'Quality Assurance and Integration Developer, UI/UX Assistant Developer',
+                'focus' => 'Validated end-to-end POS, voiding, and email workflows, feature test coverage, accessibility polish, and UI consistency.',
+                'github' => 'https://github.com/O3r1n-Br13ll3',
+                'badge' => 'QA & Integration',
+            ],
+        ];
+
+        return view('landing.about', [
+            'developers' => $developers,
+        ]);
+    }
 }
