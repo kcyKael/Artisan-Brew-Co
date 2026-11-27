@@ -1,7 +1,7 @@
 @props(['tone' => 'neutral'])
 
 @php
-$classes = match ($tone) {
+    $classes = match ($tone) {
         'success' => 'bg-[rgba(156,175,148,0.14)] text-[#9CAF94] border-[#9CAF94]/35',
         'warning' => 'bg-[rgba(224,168,91,0.14)] text-[#E0A85B] border-[#E0A85B]/35',
         'danger' => 'bg-[rgba(224,122,122,0.14)] text-[#E07A7A] border-[#E07A7A]/35',

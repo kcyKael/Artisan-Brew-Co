@@ -1,5 +1,5 @@
 @php
-use App\Support\BusinessTime;
+    use App\Support\BusinessTime;
     use App\Support\Money;
 
     $inv = $metrics['inventory_status'];
