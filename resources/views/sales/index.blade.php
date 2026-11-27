@@ -135,7 +135,13 @@ use App\Support\BusinessTime;
                                     <td class="text-xs text-[#BFB4A5] whitespace-nowrap">{{ BusinessTime::format($sale->created_at) }}</td>
                                     <td class="text-right whitespace-nowrap">
                                         @if($order)
-                                            <a href="{{ route('orders.receipt', $order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
+                                            <div class="inline-flex items-center justify-end gap-1.5">
+                                                <a href="{{ route('orders.show', $order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">View</a>
+                                                <a href="{{ route('orders.receipt', $order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
+                                                @if($order->status === 'completed')
+                                                    <a href="{{ route('orders.show', ['order' => $order, 'void' => 1]) }}" class="abc-btn-danger py-1 px-2.5 text-xs">Void</a>
+                                                @endif
+                                            </div>
                                         @endif
                                     </td>
                                 </tr>

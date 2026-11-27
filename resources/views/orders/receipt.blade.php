@@ -21,6 +21,9 @@
                 <button type="button" data-receipt-layout="80mm" aria-pressed="true" class="abc-btn-primary py-2 px-3 text-xs">80mm Thermal</button>
                 <button type="button" data-receipt-layout="a4" aria-pressed="false" class="abc-btn-secondary py-2 px-3 text-xs">A4 View</button>
                 <a href="{{ route('sales.index') }}" class="abc-btn-secondary py-2 px-3 text-xs">Sales History</a>
+                @if($order->status === 'completed')
+                    <a href="{{ route('orders.show', ['order' => $order, 'void' => 1]) }}" class="abc-btn-danger py-2 px-3 text-xs">Void Order</a>
+                @endif
             </div>
         </div>
 

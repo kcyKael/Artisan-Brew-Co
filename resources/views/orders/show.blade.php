@@ -37,12 +37,6 @@
             </div>
         </div>
 
-        @if(session('status'))
-            <div class="abc-panel px-4 py-3 border-[#22A85B]/40 bg-[#22A85B]/10 text-sm text-[#9CAF94]">
-                {{ session('status') }}
-            </div>
-        @endif
-
         @if($order->status === 'voided')
             <div class="abc-panel p-4 border-[#E07A7A]/40 bg-[#E07A7A]/10 space-y-1.5">
                 <div class="flex flex-wrap items-center justify-between gap-2">
@@ -219,25 +213,34 @@
         </dialog>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            (function () {
                 const dialog = document.getElementById('void-order-dialog');
                 if (!dialog) {
                     return;
                 }
-                document.querySelectorAll('[data-open-void-dialog]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
+                const openDialog = function () {
+                    if (!dialog.open) {
                         dialog.showModal();
-                    });
-                });
-                document.querySelectorAll('[data-close-void-dialog]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
+                    }
+                };
+                const closeDialog = function () {
+                    if (dialog.open) {
                         dialog.close();
-                    });
+                    }
+                };
+                document.addEventListener('click', function (event) {
+                    if (event.target.closest('[data-open-void-dialog]')) {
+                        openDialog();
+                        return;
+                    }
+                    if (event.target.closest('[data-close-void-dialog]') || event.target === dialog) {
+                        closeDialog();
+                    }
                 });
-                @if($hasVoidErrors)
-                    dialog.showModal();
+                @if($hasVoidErrors || request()->boolean('void'))
+                    openDialog();
                 @endif
-            });
+            })();
         </script>
     @endif
 </x-layouts.app>
