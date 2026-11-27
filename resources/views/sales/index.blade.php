@@ -76,12 +76,35 @@ use App\Support\BusinessTime;
                         </thead>
                         <tbody>
                             @foreach($sales as $sale)
+                                @php
+                                    $order = $sale->order;
+                                    $orderTypeLabel = ($order?->order_type ?? 'dine_in') === 'take_out' ? 'Take-out' : 'Dine-in';
+                                    $paymentLabel = match ($order?->payment_method ?? 'cash') {
+                                        'card' => 'Card',
+                                        'gcash' => 'GCash',
+                                        default => 'Cash',
+                                    };
+                                @endphp
                                 <tr>
                                     <td class="tabular-nums whitespace-nowrap">
-                                        @if($sale->order)
-                                            <a href="{{ route('orders.show', $sale->order) }}" class="font-medium text-[#D2B077] hover:underline">
-                                                {{ $sale->order->order_number }}
-                                            </a>
+                                        @if($order)
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{{ route('orders.show', $order) }}" class="font-medium text-[#D2B077] hover:underline">
+                                                        {{ $order->order_number }}
+                                                    </a>
+                                                    @if($order->status === 'voided')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#E07A7A]/15 text-[#E07A7A] border border-[#E07A7A]/30">Voided</span>
+                                                    @endif
+                                                </div>
+                                                <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-white/5 text-[#BFB4A5] border border-white/10">{{ $orderTypeLabel }}</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-white/5 text-[#D2B077] border border-[#D2B077]/25">{{ $paymentLabel }}</span>
+                                                </div>
+                                                @if(filled($order->cup_name))
+                                                    <div class="text-[11px] text-[#BFB4A5]">Cup: {{ $order->cup_name }}</div>
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="text-[#BFB4A5]">#{{ $sale->id }}</span>
                                         @endif
@@ -94,15 +117,25 @@ use App\Support\BusinessTime;
                                         @if($sale->saleAddons->isNotEmpty())
                                             <div class="text-xs text-[#BFB4A5]">+ {{ $sale->saleAddons->pluck('addon_name_snapshot')->implode(', ') }}</div>
                                         @endif
+                                        @if(filled($sale->note))
+                                            <div class="text-xs text-[#BFB4A5] italic">Note: {{ $sale->note }}</div>
+                                        @endif
                                     </td>
-                                    <td>{{ $sale->order?->customer_name_snapshot ?? $sale->customer?->full_name ?? 'Walk-in customer' }}</td>
-                                    <td>{{ $sale->order?->staff_name_snapshot ?? $sale->staff?->full_name ?? 'Staff' }}</td>
+                                    <td>{{ $order?->customer_name_snapshot ?? $sale->customer?->full_name ?? 'Walk-in customer' }}</td>
+                                    <td>{{ $order?->staff_name_snapshot ?? $sale->staff?->full_name ?? 'Staff' }}</td>
                                     <td class="text-right font-medium tabular-nums">{{ $sale->quantity }}</td>
-                                    <td class="text-right font-semibold text-[#F4EEE5] tabular-nums">{{ Money::formatPhp($sale->total_price) }}</td>
+                                    <td class="text-right font-semibold text-[#F4EEE5] tabular-nums">
+                                        <div>{{ Money::formatPhp($sale->total_price) }}</div>
+                                        @if($order && (float) $order->discount_amount > 0)
+                                            <div class="text-[11px] font-normal text-[#9CAF94]">
+                                                {{ $order->discount_label ?: 'Discount' }}: -{{ Money::formatPhp($order->discount_amount) }}
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="text-xs text-[#BFB4A5] whitespace-nowrap">{{ BusinessTime::format($sale->created_at) }}</td>
                                     <td class="text-right whitespace-nowrap">
-                                        @if($sale->order)
-                                            <a href="{{ route('orders.receipt', $sale->order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
+                                        @if($order)
+                                            <a href="{{ route('orders.receipt', $order) }}" class="abc-btn-secondary py-1 px-2.5 text-xs">Receipt</a>
                                         @endif
                                     </td>
                                 </tr>

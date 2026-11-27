@@ -1,6 +1,13 @@
 @php
     use App\Support\BusinessTime;
     use App\Support\Money;
+
+    $orderTypeLabel = ($order->order_type ?? 'dine_in') === 'take_out' ? 'Take-out' : 'Dine-in';
+    $paymentLabel = match ($order->payment_method ?? 'cash') {
+        'card' => 'Card',
+        'gcash' => 'GCash',
+        default => 'Cash',
+    };
 @endphp
 
 <x-layouts.app title="Receipt {{ $order->order_number }}">
@@ -19,31 +26,83 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <section class="no-print lg:col-span-6 abc-panel p-6 sm:p-8 text-center space-y-5">
-                <div class="mx-auto w-14 h-14 rounded-full bg-[var(--color-success-tint-dark)] border border-[#22A85B]/40 flex items-center justify-center text-[#22A85B]">
-                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
+                @if($order->status === 'voided')
+                    <div class="mx-auto w-14 h-14 rounded-full bg-[#E07A7A]/15 border border-[#E07A7A]/40 flex items-center justify-center text-[#E07A7A]">
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
 
-                <div class="space-y-1">
-                    <h2 class="font-display text-3xl font-semibold text-[#F4EEE5]">Payment Successful!</h2>
-                    <p class="text-xs text-[#BFB4A5] tabular-nums">Receipt {{ $order->order_number }}</p>
-                </div>
+                    <div class="space-y-1">
+                        <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#E07A7A]/15 text-[#E07A7A] border border-[#E07A7A]/30">VOIDED</span>
+                        <h2 class="font-display text-3xl font-semibold text-[#F4EEE5]">Order Voided</h2>
+                        <p class="text-xs text-[#BFB4A5] tabular-nums">Receipt {{ $order->order_number }}</p>
+                    </div>
+                @else
+                    <div class="mx-auto w-14 h-14 rounded-full bg-[var(--color-success-tint-dark)] border border-[#22A85B]/40 flex items-center justify-center text-[#22A85B]">
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="space-y-1">
+                        <h2 class="font-display text-3xl font-semibold text-[#F4EEE5]">Payment Successful!</h2>
+                        <p class="text-xs text-[#BFB4A5] tabular-nums">Receipt {{ $order->order_number }}</p>
+                    </div>
+                @endif
 
                 <div class="abc-surface p-4 space-y-1">
                     <div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#BFB4A5]">Total Amount Paid</div>
-                    <div class="text-3xl font-semibold text-[#22A85B] tabular-nums">{{ Money::formatPhp($order->total_amount) }}</div>
+                    <div class="text-3xl font-semibold {{ $order->status === 'voided' ? 'text-[#E07A7A] line-through' : 'text-[#22A85B]' }} tabular-nums">{{ Money::formatPhp($order->total_amount) }}</div>
                 </div>
 
                 <div class="abc-surface divide-y divide-white/10 text-sm text-left">
                     <div class="px-4 py-3 flex items-center justify-between gap-2">
-                        <span class="text-[#BFB4A5]">Cash Received</span>
-                        <span class="font-medium text-[#F4EEE5] tabular-nums">{{ Money::formatPhp($order->cash_received) }}</span>
+                        <span class="text-[#BFB4A5]">Order Type</span>
+                        <span class="font-medium text-[#F4EEE5]">{{ $orderTypeLabel }}</span>
                     </div>
+                    @if(filled($order->cup_name))
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">Cup Name</span>
+                            <span class="font-medium text-[#D2B077]">{{ $order->cup_name }}</span>
+                        </div>
+                    @endif
+                    @if(filled($order->order_note))
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">Order Note</span>
+                            <span class="font-medium text-[#F4EEE5] text-right">{{ $order->order_note }}</span>
+                        </div>
+                    @endif
                     <div class="px-4 py-3 flex items-center justify-between gap-2">
-                        <span class="text-[#BFB4A5]">Change Due</span>
-                        <span class="font-semibold text-[#22A85B] tabular-nums">{{ Money::formatPhp($order->change_amount) }}</span>
+                        <span class="text-[#BFB4A5]">Subtotal</span>
+                        <span class="font-medium text-[#F4EEE5] tabular-nums">{{ Money::formatPhp($order->subtotal_amount) }}</span>
                     </div>
+                    @if((float) $order->discount_amount > 0)
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">{{ $order->discount_label ?: 'Discount' }}</span>
+                            <span class="font-medium text-[#9CAF94] tabular-nums">-{{ Money::formatPhp($order->discount_amount) }}</span>
+                        </div>
+                    @endif
+                    <div class="px-4 py-3 flex items-center justify-between gap-2">
+                        <span class="text-[#BFB4A5]">Payment Method</span>
+                        <span class="font-medium text-[#F4EEE5]">{{ $paymentLabel }}</span>
+                    </div>
+                    @if(filled($order->payment_reference))
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">Payment Reference</span>
+                            <span class="font-medium text-[#F4EEE5] tabular-nums">{{ $order->payment_reference }}</span>
+                        </div>
+                    @endif
+                    @if(($order->payment_method ?? 'cash') === 'cash')
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">Cash Received</span>
+                            <span class="font-medium text-[#F4EEE5] tabular-nums">{{ Money::formatPhp($order->cash_received) }}</span>
+                        </div>
+                        <div class="px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-[#BFB4A5]">Change Due</span>
+                            <span class="font-semibold text-[#22A85B] tabular-nums">{{ Money::formatPhp($order->change_amount) }}</span>
+                        </div>
+                    @endif
                 </div>
 
                 <a href="{{ route('orders.show', $order) }}" class="abc-surface px-4 py-3 flex items-center justify-between gap-3 text-sm hover:border-[#D2B077]/45 transition-colors">
