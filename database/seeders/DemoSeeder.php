@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Addon;
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\GiftCard;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -109,6 +110,24 @@ class DemoSeeder extends Seeder
                     'price' => $def['price'],
                     'sort_order' => $def['sort_order'],
                     'is_active' => true,
+                ]
+            );
+        }
+
+        $giftCardDefs = [
+            ['code' => 'ABC-GIFT-500', 'balance' => '500.00'],
+            ['code' => 'ABC-GIFT-1000', 'balance' => '1000.00'],
+            ['code' => 'ABC-GIFT-250', 'balance' => '250.00'],
+        ];
+
+        foreach ($giftCardDefs as $cardDef) {
+            GiftCard::firstOrCreate(
+                ['code' => $cardDef['code']],
+                [
+                    'initial_balance' => $cardDef['balance'],
+                    'remaining_balance' => $cardDef['balance'],
+                    'is_active' => true,
+                    'expires_at' => null,
                 ]
             );
         }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exceptions\CheckoutException;
 use App\Models\Addon;
 use App\Models\Customer;
+use App\Models\GiftCard;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -15,6 +16,7 @@ use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -244,5 +246,148 @@ class CheckoutAndPricingTest extends TestCase
         $this->assertSame(0, Order::count());
         $this->assertSame(0, Sale::count());
         $this->assertSame(0, SaleAddon::count());
+    }
+
+    public function test_orders_sales_and_gift_cards_schema_supports_new_pos_fields(): void
+    {
+        $this->assertTrue(Schema::hasTable('gift_cards'));
+        $this->assertTrue(Schema::hasColumns('gift_cards', [
+            'id',
+            'code',
+            'initial_balance',
+            'remaining_balance',
+            'is_active',
+            'expires_at',
+            'created_at',
+            'updated_at',
+        ]));
+
+        $this->assertTrue(Schema::hasColumns('orders', [
+            'order_type',
+            'payment_method',
+            'payment_reference',
+            'cup_name',
+            'order_note',
+            'discount_type',
+            'discount_label',
+            'discount_amount',
+            'gift_card_id',
+            'status',
+            'voided_at',
+            'voided_by',
+            'void_reason',
+        ]));
+
+        $this->assertTrue(Schema::hasColumn('sales', 'note'));
+
+        $activeCard = GiftCard::create([
+            'code' => 'ABC-TEST-500',
+            'initial_balance' => '500.00',
+            'remaining_balance' => '500.00',
+            'is_active' => true,
+            'expires_at' => null,
+        ]);
+        $this->assertTrue($activeCard->isUsable());
+
+        $futureCard = GiftCard::create([
+            'code' => 'ABC-TEST-FUTURE',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '50.00',
+            'is_active' => true,
+            'expires_at' => now()->addDay(),
+        ]);
+        $this->assertTrue($futureCard->isUsable());
+
+        $inactiveCard = GiftCard::create([
+            'code' => 'ABC-TEST-INACTIVE',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '100.00',
+            'is_active' => false,
+            'expires_at' => null,
+        ]);
+        $this->assertFalse($inactiveCard->isUsable());
+
+        $emptyCard = GiftCard::create([
+            'code' => 'ABC-TEST-EMPTY',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '0.00',
+            'is_active' => true,
+            'expires_at' => null,
+        ]);
+        $this->assertFalse($emptyCard->isUsable());
+
+        $expiredCard = GiftCard::create([
+            'code' => 'ABC-TEST-EXPIRED',
+            'initial_balance' => '100.00',
+            'remaining_balance' => '100.00',
+            'is_active' => true,
+            'expires_at' => now()->subMinute(),
+        ]);
+        $this->assertFalse($expiredCard->isUsable());
+
+        $cashier = $this->makeCashier();
+        $voidAdmin = new User([
+            'username' => 'void_admin',
+            'full_name' => 'Void Admin',
+            'password' => Hash::make('Admin@123'),
+        ]);
+        $voidAdmin->role = User::ROLE_ADMIN;
+        $voidAdmin->is_active = true;
+        $voidAdmin->save();
+        $voidAdmin->delete();
+
+        $order = Order::create([
+            'order_number' => 'ABC-TEST-000001',
+            'sold_by' => $cashier->id,
+            'customer_name_snapshot' => 'Walk-in customer',
+            'staff_name_snapshot' => $cashier->full_name,
+            'source' => 'pos',
+            'order_type' => 'take_out',
+            'payment_method' => 'gcash',
+            'payment_reference' => 'GC-123456',
+            'cup_name' => 'Alex',
+            'order_note' => 'Pack separately',
+            'subtotal_amount' => '200.00',
+            'discount_type' => 'giftcard',
+            'discount_label' => 'Gift Card ABC-TEST-500',
+            'discount_amount' => '100.00',
+            'gift_card_id' => $activeCard->id,
+            'total_amount' => '100.00',
+            'cash_received' => '100.00',
+            'change_amount' => '0.00',
+            'status' => 'voided',
+            'voided_at' => now(),
+            'voided_by' => $voidAdmin->id,
+            'void_reason' => 'Customer changed order',
+            'checkout_token' => Str::uuid()->toString(),
+            'request_hash' => hash('sha256', 'schema-test-order'),
+        ]);
+
+        $this->assertSame($activeCard->id, $order->giftCard?->id);
+        $this->assertSame($voidAdmin->id, $order->voidedBy?->id);
+        $this->assertSame(1, $activeCard->orders()->count());
+
+        $product = Product::create([
+            'name' => 'Americano',
+            'price' => '130.00',
+            'stock_quantity' => 10,
+            'low_stock_threshold' => 2,
+            'is_active' => true,
+        ]);
+
+        $sale = Sale::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'sold_by' => $cashier->id,
+            'product_name_snapshot' => 'Americano',
+            'base_price_snapshot' => '130.00',
+            'variant_adjustment_snapshot' => '0.00',
+            'addons_total_snapshot' => '0.00',
+            'unit_price' => '130.00',
+            'quantity' => 1,
+            'total_price' => '130.00',
+            'note' => 'Less ice',
+        ]);
+        $this->assertSame('Less ice', $sale->fresh()->note);
     }
 }

@@ -25,6 +25,7 @@ class Sale extends Model
         'unit_price',
         'quantity',
         'total_price',
+        'note',
     ];
 
     protected function casts(): array
