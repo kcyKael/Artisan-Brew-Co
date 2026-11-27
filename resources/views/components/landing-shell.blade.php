@@ -1,12 +1,36 @@
 @props([
     'title' => 'Artisan Brew Co.',
+    'description' => 'Exceptional coffee, thoughtful craft, and a moment worth making time for. Single-origin espresso, ceremonial matcha, and house-baked pastries.',
+    'ogImage' => null,
 ])
+@php
+    $ogImageUrl = $ogImage ?: asset('images/og-preview.jpg');
+    $canonicalUrl = url()->current();
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }}</title>
+    <meta name="description" content="{{ $description }}">
+    <meta name="theme-color" content="#161412">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('pos.brand_name', 'Artisan Brew Co.') }}">
+    <meta property="og:title" content="{{ $title }}">
+    <meta property="og:description" content="{{ $description }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $ogImageUrl }}">
+    <meta property="og:image:secure_url" content="{{ $ogImageUrl }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Artisan Brew Co. — Contemporary Coffee Studio">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $title }}">
+    <meta name="twitter:description" content="{{ $description }}">
+    <meta name="twitter:image" content="{{ $ogImageUrl }}">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     @vite(['resources/css/landing.css', 'resources/js/landing.js'])
 </head>

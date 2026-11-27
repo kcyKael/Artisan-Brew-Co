@@ -2,7 +2,9 @@
     use App\Support\Money;
 @endphp
 
-<x-landing-shell title="Menu — {{ config('pos.brand_name', 'Artisan Brew Co.') }}">
+<x-landing-shell
+    title="Menu — {{ config('pos.brand_name', 'Artisan Brew Co.') }}"
+    description="Explore Artisan Brew Co.'s live studio menu: single-origin espresso, ceremonial matcha, cold-steeped chocolate, and house-baked pastries.">
     <section class="relative pt-32 pb-16 overflow-hidden studio-hero-backdrop">
         <div class="pointer-events-none absolute inset-0 studio-atmosphere-glow opacity-85" aria-hidden="true"></div>
         <div class="pointer-events-none absolute inset-0 studio-grain" aria-hidden="true"></div>
