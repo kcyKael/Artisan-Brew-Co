@@ -367,9 +367,44 @@ body.studio-bg-active .studio-window-gobo-panes {
     }
 }
 
+.rkc-logo-float {
+    filter: drop-shadow(0 0 22px rgba(168, 85, 247, 0.45)) drop-shadow(0 16px 28px rgba(0, 0, 0, 0.65));
+    animation: rkcLogoFloat 6s ease-in-out infinite;
+    will-change: transform, filter;
+}
+
+.rkc-logo-aura {
+    animation: rkcLogoAura 5s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes rkcLogoFloat {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+        filter: drop-shadow(0 0 22px rgba(168, 85, 247, 0.42)) drop-shadow(0 16px 28px rgba(0, 0, 0, 0.65));
+    }
+    50% {
+        transform: translate3d(0, -10px, 0);
+        filter: drop-shadow(0 0 34px rgba(192, 132, 252, 0.65)) drop-shadow(0 24px 36px rgba(0, 0, 0, 0.72));
+    }
+}
+
+@keyframes rkcLogoAura {
+    0%, 100% {
+        transform: scale(0.96);
+        opacity: 0.72;
+    }
+    50% {
+        transform: scale(1.06);
+        opacity: 1;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     body.studio-bg-active .studio-hero-light,
-    body.studio-bg-active .studio-window-gobo-panes {
+    body.studio-bg-active .studio-window-gobo-panes,
+    .rkc-logo-float,
+    .rkc-logo-aura {
         animation: none;
     }
     .steam-ribbon {

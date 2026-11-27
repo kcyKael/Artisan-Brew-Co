@@ -38,14 +38,14 @@
                 </div>
 
                 <div class="lg:col-span-5 flex justify-center lg:justify-end" data-reveal>
-                    <div class="relative w-64 h-64 sm:w-76 sm:h-76 rounded-3xl border border-[#C084FC]/25 bg-[#191614]/90 p-8 flex flex-col items-center justify-center shadow-[0_30px_80px_rgba(0,0,0,0.65)]">
-                        <div class="pointer-events-none absolute -inset-4 rounded-full bg-[radial-gradient(circle,rgba(168,85,247,0.18)_0%,rgba(210,176,119,0.08)_48%,transparent_72%)] blur-2xl" aria-hidden="true"></div>
+                    <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex flex-col items-center justify-center">
+                        <div class="rkc-logo-aura pointer-events-none absolute -inset-6 rounded-full bg-[radial-gradient(circle,rgba(168,85,247,0.34)_0%,rgba(192,132,252,0.16)_38%,rgba(210,176,119,0.06)_60%,transparent_76%)] blur-2xl" aria-hidden="true"></div>
                         <img src="{{ asset('images/rootkitcats-logo.png') }}"
                              alt="RootKitCats team emblem — purple-accented black cyber cat"
                              width="512"
                              height="512"
-                             class="relative z-10 w-44 h-44 sm:w-52 sm:h-52 object-contain drop-shadow-[0_14px_26px_rgba(0,0,0,0.6)]">
-                        <span class="relative z-10 mt-3 text-[11px] uppercase tracking-[0.28em] text-[#C084FC]">RootKitCats</span>
+                             class="rkc-logo-float relative z-10 w-52 h-52 sm:w-64 sm:h-64 object-contain">
+                        <span class="relative z-10 mt-2 text-[11px] uppercase tracking-[0.32em] text-[#D8B4FE]">RootKitCats</span>
                     </div>
                 </div>
             </div>
