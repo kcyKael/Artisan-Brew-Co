@@ -2,11 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\CheckoutException;
 use App\Models\Order;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\CheckoutService;
 use App\Support\BusinessTime;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SalesHistoryController extends Controller
@@ -88,5 +95,88 @@ class SalesHistoryController extends Controller
         $order->load(['sales.saleAddons', 'customer', 'staff']);
 
         return view('orders.receipt', ['order' => $order]);
+    }
+
+    public function voidOrder(Request $request, Order $order, CheckoutService $checkout): RedirectResponse|JsonResponse
+    {
+        $this->authorize('void', $order);
+
+        $validated = $request->validate([
+            'void_reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        if ($request->user()->isAdmin()) {
+            $approver = $request->user();
+        } else {
+            $throttleKey = 'void-override:'.$request->user()->id.'|'.$request->ip();
+
+            if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+                throw ValidationException::withMessages([
+                    'admin_username' => 'Too many override attempts. Please wait a minute before trying again.',
+                ]);
+            }
+
+            $override = $request->validate([
+                'admin_username' => ['required', 'string'],
+                'admin_password' => ['required', 'string'],
+            ]);
+
+            $candidate = User::query()
+                ->where('username', trim((string) $override['admin_username']))
+                ->first();
+
+            if (
+                ! $candidate
+                || ! $candidate->isActiveAccount()
+                || ! $candidate->isAdmin()
+                || ! Hash::check((string) $override['admin_password'], (string) $candidate->password)
+            ) {
+                RateLimiter::hit($throttleKey, 60);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Invalid or inactive admin/manager credentials.',
+                        'errors' => [
+                            'admin_username' => ['Invalid or inactive admin/manager credentials.'],
+                        ],
+                    ], 422);
+                }
+
+                return back()
+                    ->withErrors(['admin_username' => 'Invalid or inactive admin/manager credentials.'])
+                    ->withInput($request->except('admin_password'));
+            }
+
+            RateLimiter::clear($throttleKey);
+            $approver = $candidate;
+        }
+
+        try {
+            $voidedOrder = $checkout->voidOrder($order, $approver, $validated['void_reason']);
+        } catch (CheckoutException $e) {
+            $errorKey = $e->field ?? 'void_reason';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => [
+                        $errorKey => [$e->getMessage()],
+                    ],
+                ], $e->statusCode);
+            }
+
+            return back()->withErrors([$errorKey => $e->getMessage()]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'order' => $voidedOrder,
+                'message' => 'Order #'.$order->order_number.' has been voided.',
+            ]);
+        }
+
+        return redirect()
+            ->route('orders.show', $order)
+            ->with('status', 'Order #'.$order->order_number.' has been voided.');
     }
 }

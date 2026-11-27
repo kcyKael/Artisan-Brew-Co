@@ -22,19 +22,23 @@ class DashboardMetricsService
         [$rangeStartUtc, $rangeEndUtc] = BusinessTime::utcBoundsForManilaRange($fromDate, $toDate);
 
         $todayOrderAgg = DB::table('orders')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$todayStartUtc, $todayEndUtc])
             ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(total_amount), 0) as revenue')
             ->first();
 
         $todayUnits = (int) DB::table('sales')
-            ->whereBetween('created_at', [$todayStartUtc, $todayEndUtc])
-            ->sum('quantity');
+            ->join('orders', 'sales.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->whereBetween('sales.created_at', [$todayStartUtc, $todayEndUtc])
+            ->sum('sales.quantity');
 
         $todayRevenueCentavos = Money::toCentavos((string) ($todayOrderAgg->revenue ?? '0.00'));
         $todayOrderCount = (int) ($todayOrderAgg->order_count ?? 0);
         $todayAvgCentavos = $todayOrderCount > 0 ? intdiv($todayRevenueCentavos, $todayOrderCount) : 0;
 
         $rangeOrderAgg = DB::table('orders')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
             ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(total_amount), 0) as revenue')
             ->first();
@@ -44,10 +48,13 @@ class DashboardMetricsService
         $rangeAvgCentavos = $rangeOrderCount > 0 ? intdiv($rangeRevenueCentavos, $rangeOrderCount) : 0;
 
         $rangeUnits = (int) DB::table('sales')
-            ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
-            ->sum('quantity');
+            ->join('orders', 'sales.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->whereBetween('sales.created_at', [$rangeStartUtc, $rangeEndUtc])
+            ->sum('sales.quantity');
 
         $ordersInRange = DB::table('orders')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
             ->select(['created_at', 'total_amount'])
             ->get();
@@ -86,9 +93,11 @@ class DashboardMetricsService
         }, $dailyBuckets));
 
         $rawTop = DB::table('sales')
-            ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
-            ->groupBy('product_id', 'product_name_snapshot')
-            ->selectRaw('product_id, product_name_snapshot as name, SUM(quantity) as units_sold, SUM(total_price) as revenue')
+            ->join('orders', 'sales.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->whereBetween('sales.created_at', [$rangeStartUtc, $rangeEndUtc])
+            ->groupBy('sales.product_id', 'sales.product_name_snapshot')
+            ->selectRaw('sales.product_id, sales.product_name_snapshot as name, SUM(sales.quantity) as units_sold, SUM(sales.total_price) as revenue')
             ->orderByDesc('units_sold')
             ->orderByDesc('revenue')
             ->limit(6)
@@ -110,6 +119,7 @@ class DashboardMetricsService
         })->values()->all();
 
         $recentOrders = Order::query()
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$rangeStartUtc, $rangeEndUtc])
             ->withCount('sales')
             ->with(['sales', 'customer', 'staff'])

@@ -45,6 +45,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/sales', [SalesHistoryController::class, 'index'])->name('sales.index');
     Route::get('/orders/{order}', [SalesHistoryController::class, 'showOrder'])->name('orders.show');
     Route::get('/orders/{order}/receipt', [SalesHistoryController::class, 'receipt'])->name('orders.receipt');
+    Route::post('/orders/{order}/void', [SalesHistoryController::class, 'voidOrder'])->name('orders.void');
 
     Route::resource('customers', CustomerController::class);
 

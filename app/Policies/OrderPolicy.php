@@ -24,4 +24,9 @@ class OrderPolicy
 
         return (int) $order->sold_by === (int) $user->id;
     }
+
+    public function void(User $user, Order $order): bool
+    {
+        return $this->view($user, $order);
+    }
 }

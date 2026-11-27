@@ -628,4 +628,79 @@ class CheckoutService
             && $driverCode === 1062
             && str_contains($e->getMessage(), 'orders_staff_checkout_token_unique');
     }
+
+    public function voidOrder(Order $order, User $approver, string $reason): Order
+    {
+        if (! $approver->isActiveAccount() || ! $approver->isAdmin()) {
+            throw new CheckoutException('An active admin/manager account is required to approve a void.', 403);
+        }
+
+        $trimmedReason = trim($reason);
+        if ($trimmedReason === '') {
+            throw new CheckoutException('Please provide a reason for voiding this order.', 422, 'void_reason');
+        }
+
+        $cleanReason = mb_substr($trimmedReason, 0, 255);
+
+        return DB::transaction(function () use ($order, $approver, $cleanReason): Order {
+            $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->status !== 'completed') {
+                throw new CheckoutException('Only completed orders can be voided.', 422, 'status');
+            }
+
+            $sales = Sale::query()->where('order_id', $lockedOrder->id)->get();
+
+            $qtyByProduct = [];
+            foreach ($sales as $sale) {
+                if ($sale->product_id !== null) {
+                    $productId = (int) $sale->product_id;
+                    $qtyByProduct[$productId] = ($qtyByProduct[$productId] ?? 0) + (int) $sale->quantity;
+                }
+            }
+            ksort($qtyByProduct);
+
+            if ($qtyByProduct !== []) {
+                $products = Product::query()
+                    ->whereIn('id', array_keys($qtyByProduct))
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                foreach ($qtyByProduct as $productId => $qtyToRestore) {
+                    $product = $products->get($productId);
+                    if ($product) {
+                        $product->stock_quantity += $qtyToRestore;
+                        $product->stock_version += 1;
+                        $product->save();
+                    }
+                }
+            }
+
+            if ($lockedOrder->gift_card_id !== null) {
+                $giftCard = GiftCard::query()
+                    ->whereKey($lockedOrder->gift_card_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($giftCard) {
+                    $discountCentavos = Money::toCentavos((string) $lockedOrder->discount_amount);
+                    $currentCentavos = Money::toCentavos((string) $giftCard->remaining_balance);
+                    $initialCentavos = Money::toCentavos((string) $giftCard->initial_balance);
+                    $restoredCentavos = min($initialCentavos, $currentCentavos + $discountCentavos);
+                    $giftCard->remaining_balance = Money::fromCentavos($restoredCentavos);
+                    $giftCard->save();
+                }
+            }
+
+            $lockedOrder->status = 'voided';
+            $lockedOrder->voided_at = now('UTC');
+            $lockedOrder->voided_by = $approver->id;
+            $lockedOrder->void_reason = $cleanReason;
+            $lockedOrder->save();
+
+            return $lockedOrder->fresh(['staff', 'customer', 'voidedBy', 'giftCard', 'sales.saleAddons']);
+        });
+    }
 }
